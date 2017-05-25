@@ -1,0 +1,21 @@
+class_name: RunnerTester
+modules:
+    enabled:
+        - \Helper\Acceptance
+        - WPDb
+        - WPBrowser
+    config:
+        WPDb:
+            dsn: 'mysql:host=localhost;dbname=wordpress'
+            user: wordpressuser
+            password: password
+            dump: tests/_data/dump.sql
+            populate: false
+            cleanup: false
+            url: 'http://localhost'
+            tablePrefix: wp_
+        WPBrowser:
+            url: 'http://localhost'
+            adminUsername: admin
+            adminPassword: password
+            adminPath: /wp-admin
