@@ -75,8 +75,9 @@ class DailyOutputView{
     	
     	if(isset($_POST['search-keyword'])){
     		$keyword = $_POST['search-keyword'];
+    		update_option( 'search-keyword', $keyword);
     	}else{
-    		$keyword= "wordpress";
+    		$keyword = get_option('search-keyword');
     	}
     	
     	$output = 

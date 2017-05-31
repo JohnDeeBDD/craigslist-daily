@@ -6,7 +6,13 @@ class  CraigslistAdminPage{
 
 	//An item is added to the admin area, which can be clicked:
 	function __construct(){
-		add_action( 'admin_menu', array( $this, 'CraigslistMenuItem' ) );
+		add_action('init', array( $this, 'checkForAdmindOrEditor' ) );
+	}
+	
+	public function checkForAdmindOrEditor(){
+		if( current_user_can('edit_others_pages') ){
+			add_action( 'admin_menu', array( $this, 'CraigslistMenuItem' ) );
+		}
 	}
 	
 	//The hook to actually run the plugin:
