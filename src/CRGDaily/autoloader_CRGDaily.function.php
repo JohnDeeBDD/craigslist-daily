@@ -9,14 +9,19 @@ function autoload($className){
 		return;
 	}
 	$className = substr($className, 9);
-	
+	$plugin_dir_path= plugin_dir_path(__FILE__);
 	//Check for ".class.php":
-	$fileName = '//var/www/html/wp-content/plugins/crg-daily/src/CRGDaily/' . $className . '.class.php';
+	$fileName = $plugin_dir_path .$className . '.class.php';
+	
+	//Enable stack trace:
+	//echo($fileName);
+	
+	
 	if (file_exists($fileName)) {
 		include_once($fileName);
 	}else{
 		//Check for ".trait.php":
-		$fileName = '//var/www/html/wp-content/plugins/crg-daily/src/CRGDaily/' . $className . '.trait.php';
+		$fileName = $plugin_dir_path . $className . '.trait.php';
 		if (file_exists($fileName)) {
 			include_once($fileName);
 		}
