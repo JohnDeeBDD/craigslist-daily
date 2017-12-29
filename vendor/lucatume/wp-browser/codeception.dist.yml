@@ -9,18 +9,19 @@ settings:
     colors: true
     memory_limit: 1024M
 params:
-    - env
-wpFolder: '%wpFolder%'
+    - .env
+wpFolder: '%WP_ROOT_FOLDER%'
 extensions:
     enabled:
         - Codeception\Extension\Phantoman
         - tad\WPBrowser\Extension\Copier
     config:
         Codeception\Extension\Phantoman:
-            path: 'phantomjsbin'
+            path: '%PHANTOMJS%'
             port: 4444
             suites: ['phantomjs']
         tad\WPBrowser\Extension\Copier:
             files:
-               'tests/_data/themes/dummy': '/tmp/wordpress/wp-content/themes/dummy'
-               'tests/_data/plugins/mu-plugin-1': '/tmp/wordpress/wp-content/plugins/mu-plugin-1'
+               'tests/_data/themes/dummy': '%WP_ROOT_FOLDER%/wp-content/themes/dummy'
+               'tests/_data/plugins/mu-plugin-1': '%WP_ROOT_FOLDER%/wp-content/plugins/mu-plugin-1'
+               'tests/_data/plugins/test': '%WP_ROOT_FOLDER%/wp-content/plugins/test'

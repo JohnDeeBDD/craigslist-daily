@@ -59,7 +59,7 @@ class CreateProjectCommand extends BaseCommand
     {
         $this
             ->setName('create-project')
-            ->setDescription('Create new project from a package into given directory.')
+            ->setDescription('Creates new project from a package into given directory.')
             ->setDefinition(array(
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to be installed'),
                 new InputArgument('directory', InputArgument::OPTIONAL, 'Directory where the files should be created'),
@@ -169,7 +169,9 @@ EOT
             $composer->getEventDispatcher()->dispatchScript(ScriptEvents::POST_ROOT_PACKAGE_INSTALL, $installDevPackages);
         }
 
-        list($preferSource, $preferDist) = $this->getPreferredInstallOptions($composer->getConfig(), $input);
+        // use the new config including the newly installed project
+        $config = $composer->getConfig();
+        list($preferSource, $preferDist) = $this->getPreferredInstallOptions($config, $input);
 
         // install dependencies of the created project
         if ($noInstall === false) {
@@ -179,7 +181,8 @@ EOT
                 ->setDevMode($installDevPackages)
                 ->setRunScripts(!$noScripts)
                 ->setIgnorePlatformRequirements($ignorePlatformReqs)
-                ->setSuggestedPackagesReporter($this->suggestedPackagesReporter);
+                ->setSuggestedPackagesReporter($this->suggestedPackagesReporter)
+                ->setOptimizeAutoloader($config->get('optimize-autoloader'));
 
             if ($disablePlugins) {
                 $installer->disablePlugins();
@@ -238,10 +241,10 @@ EOT
         }
 
         chdir($oldCwd);
-        $vendorComposerDir = $composer->getConfig()->get('vendor-dir').'/composer';
+        $vendorComposerDir = $config->get('vendor-dir').'/composer';
         if (is_dir($vendorComposerDir) && $fs->isDirEmpty($vendorComposerDir)) {
             Silencer::call('rmdir', $vendorComposerDir);
-            $vendorDir = $composer->getConfig()->get('vendor-dir');
+            $vendorDir = $config->get('vendor-dir');
             if (is_dir($vendorDir) && $fs->isDirEmpty($vendorDir)) {
                 Silencer::call('rmdir', $vendorDir);
             }

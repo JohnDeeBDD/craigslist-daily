@@ -122,6 +122,8 @@ CodeManipulation\register([
     CodeManipulation\Actions\CallRerouting\injectQueueDeploymentCode(),
     CodeManipulation\Actions\RedefinitionOfInternals\spliceNamedFunctionCalls(),
     CodeManipulation\Actions\RedefinitionOfInternals\spliceDynamicCalls(),
+    CodeManipulation\Actions\RedefinitionOfNew\spliceAllInstantiations,
+    CodeManipulation\Actions\RedefinitionOfNew\publicizeConstructors,
     CodeManipulation\Actions\ConflictPrevention\preventImportingOtherCopiesOfPatchwork(),
 ]);
 
@@ -135,6 +137,12 @@ register_shutdown_function('Patchwork\Utils\clearOpcodeCaches');
 
 CallRerouting\createStubsForInternals();
 CallRerouting\connectDefaultInternals();
+
+require __DIR__ . '/src/Redefinitions/LanguageConstructs.php';
+
+CodeManipulation\register([
+    CodeManipulation\Actions\RedefinitionOfLanguageConstructs\spliceAllConfiguredLanguageConstructs(),
+]);
 
 if (Utils\wasRunAsConsoleApp()) {
     require __DIR__ . '/src/Console.php';

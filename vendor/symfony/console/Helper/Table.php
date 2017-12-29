@@ -26,29 +26,23 @@ class Table
 {
     /**
      * Table headers.
-     *
-     * @var array
      */
     private $headers = array();
 
     /**
      * Table rows.
-     *
-     * @var array
      */
     private $rows = array();
 
     /**
      * Column widths cache.
-     *
-     * @var array
      */
-    private $columnWidths = array();
+    private $effectiveColumnWidths = array();
 
     /**
      * Number of columns cache.
      *
-     * @var array
+     * @var int
      */
     private $numberOfColumns;
 
@@ -66,6 +60,13 @@ class Table
      * @var array
      */
     private $columnStyles = array();
+
+    /**
+     * User set column widths.
+     *
+     * @var array
+     */
+    private $columnWidths = array();
 
     private static $styles;
 
@@ -149,7 +150,7 @@ class Table
      */
     public function setColumnStyle($columnIndex, $name)
     {
-        $columnIndex = intval($columnIndex);
+        $columnIndex = (int) $columnIndex;
 
         $this->columnStyles[$columnIndex] = $this->resolveStyle($name);
 
@@ -172,6 +173,38 @@ class Table
         }
 
         return $this->getStyle();
+    }
+
+    /**
+     * Sets the minimum width of a column.
+     *
+     * @param int $columnIndex Column index
+     * @param int $width       Minimum column width in characters
+     *
+     * @return $this
+     */
+    public function setColumnWidth($columnIndex, $width)
+    {
+        $this->columnWidths[(int) $columnIndex] = (int) $width;
+
+        return $this;
+    }
+
+    /**
+     * Sets the minimum width of all columns.
+     *
+     * @param array $widths
+     *
+     * @return $this
+     */
+    public function setColumnWidths(array $widths)
+    {
+        $this->columnWidths = array();
+        foreach ($widths as $index => $width) {
+            $this->setColumnWidth($index, $width);
+        }
+
+        return $this;
     }
 
     public function setHeaders(array $headers)
@@ -284,7 +317,7 @@ class Table
 
         $markup = $this->style->getCrossingChar();
         for ($column = 0; $column < $count; ++$column) {
-            $markup .= str_repeat($this->style->getHorizontalBorderChar(), $this->columnWidths[$column]).$this->style->getCrossingChar();
+            $markup .= str_repeat($this->style->getHorizontalBorderChar(), $this->effectiveColumnWidths[$column]).$this->style->getCrossingChar();
         }
 
         $this->output->writeln(sprintf($this->style->getBorderFormat(), $markup));
@@ -330,11 +363,11 @@ class Table
     private function renderCell(array $row, $column, $cellFormat)
     {
         $cell = isset($row[$column]) ? $row[$column] : '';
-        $width = $this->columnWidths[$column];
+        $width = $this->effectiveColumnWidths[$column];
         if ($cell instanceof TableCell && $cell->getColspan() > 1) {
             // add the width of the following columns(numbers of colspan).
             foreach (range($column + 1, $column + $cell->getColspan() - 1) as $nextColumn) {
-                $width += $this->getColumnSeparatorWidth() + $this->columnWidths[$nextColumn];
+                $width += $this->getColumnSeparatorWidth() + $this->effectiveColumnWidths[$nextColumn];
             }
         }
 
@@ -420,7 +453,7 @@ class Table
      *
      * @return array
      */
-    private function fillNextRows($rows, $line)
+    private function fillNextRows(array $rows, $line)
     {
         $unmergedRows = array();
         foreach ($rows[$line] as $column => $cell) {
@@ -471,8 +504,6 @@ class Table
     /**
      * fill cells for a row that contains colspan > 1.
      *
-     * @param array $row
-     *
      * @return array
      */
     private function fillCells($row)
@@ -497,7 +528,7 @@ class Table
      *
      * @return array
      */
-    private function copyRow($rows, $line)
+    private function copyRow(array $rows, $line)
     {
         $row = $rows[$line];
         foreach ($row as $cellKey => $cellValue) {
@@ -512,8 +543,6 @@ class Table
 
     /**
      * Gets number of columns by row.
-     *
-     * @param array $row
      *
      * @return int
      */
@@ -530,11 +559,9 @@ class Table
     /**
      * Gets list of columns for the given row.
      *
-     * @param array $row
-     *
      * @return array
      */
-    private function getRowColumns($row)
+    private function getRowColumns(array $row)
     {
         $columns = range(0, $this->numberOfColumns - 1);
         foreach ($row as $cellKey => $cell) {
@@ -549,10 +576,8 @@ class Table
 
     /**
      * Calculates columns widths.
-     *
-     * @param array $rows
      */
-    private function calculateColumnsWidth($rows)
+    private function calculateColumnsWidth(array $rows)
     {
         for ($column = 0; $column < $this->numberOfColumns; ++$column) {
             $lengths = array();
@@ -577,7 +602,7 @@ class Table
                 $lengths[] = $this->getCellWidth($row, $column);
             }
 
-            $this->columnWidths[$column] = max($lengths) + strlen($this->style->getCellRowContentFormat()) - 2;
+            $this->effectiveColumnWidths[$column] = max($lengths) + strlen($this->style->getCellRowContentFormat()) - 2;
         }
     }
 
@@ -601,14 +626,16 @@ class Table
      */
     private function getCellWidth(array $row, $column)
     {
+        $cellWidth = 0;
+
         if (isset($row[$column])) {
             $cell = $row[$column];
             $cellWidth = Helper::strlenWithoutDecoration($this->output->getFormatter(), $cell);
-
-            return $cellWidth;
         }
 
-        return 0;
+        $columnWidth = isset($this->columnWidths[$column]) ? $this->columnWidths[$column] : 0;
+
+        return max($cellWidth, $columnWidth);
     }
 
     /**
@@ -616,7 +643,7 @@ class Table
      */
     private function cleanup()
     {
-        $this->columnWidths = array();
+        $this->effectiveColumnWidths = array();
         $this->numberOfColumns = null;
     }
 

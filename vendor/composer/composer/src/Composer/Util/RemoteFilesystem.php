@@ -195,6 +195,23 @@ class RemoteFilesystem
             $originUrl = 'github.com';
         }
 
+        // Gitlab can be installed in a non-root context (i.e. gitlab.com/foo). When downloading archives the originUrl
+        // is the host without the path, so we look for the registered gitlab-domains matching the host here
+        if (
+            $this->config
+            && is_array($this->config->get('gitlab-domains'))
+            && false === strpos($originUrl, '/')
+            && !in_array($originUrl, $this->config->get('gitlab-domains'))
+        ) {
+            foreach ($this->config->get('gitlab-domains') as $gitlabDomain) {
+                if (0 === strpos($gitlabDomain, $originUrl)) {
+                    $originUrl = $gitlabDomain;
+                    break;
+                }
+            }
+            unset($gitlabDomain);
+        }
+
         $this->scheme = parse_url($fileUrl, PHP_URL_SCHEME);
         $this->bytesMax = 0;
         $this->originUrl = $originUrl;
@@ -207,7 +224,7 @@ class RemoteFilesystem
         $this->redirects = 1; // The first request counts.
 
         // capture username/password from URL if there is one
-        if (preg_match('{^https?://(.+):(.+)@([^/]+)}i', $fileUrl, $match)) {
+        if (preg_match('{^https?://([^:/]+):([^@/]+)@([^/]+)}i', $fileUrl, $match)) {
             $this->io->setAuthentication($originUrl, urldecode($match[1]), urldecode($match[2]));
         }
 
@@ -228,7 +245,6 @@ class RemoteFilesystem
 
         $options = $this->getOptionsForUrl($originUrl, $tempAdditionalOptions);
         unset($tempAdditionalOptions);
-        $userlandFollow = isset($options['http']['follow_location']) && !$options['http']['follow_location'];
 
         $origFileUrl = $fileUrl;
 
@@ -286,7 +302,13 @@ class RemoteFilesystem
             $contentLength = !empty($http_response_header[0]) ? $this->findHeaderValue($http_response_header, 'content-length') : null;
             if ($contentLength && Platform::strlen($result) < $contentLength) {
                 // alas, this is not possible via the stream callback because STREAM_NOTIFY_COMPLETED is documented, but not implemented anywhere in PHP
-                throw new TransportException('Content-Length mismatch');
+                $e = new TransportException('Content-Length mismatch, received '.Platform::strlen($result).' bytes out of the expected '.$contentLength);
+                $e->setHeaders($http_response_header);
+                $e->setStatusCode($this->findStatusCode($http_response_header));
+                $e->setResponse($result);
+                $this->io->writeError('Content-Length mismatch, received '.Platform::strlen($result).' out of '.$contentLength.' bytes: (' . base64_encode($result).')', true, IOInterface::DEBUG);
+
+                throw $e;
             }
 
             if (PHP_VERSION_ID < 50600 && !empty($options['ssl']['peer_fingerprint'])) {
@@ -348,9 +370,20 @@ class RemoteFilesystem
             }
         }
 
-        // handle 3xx redirects for php<5.6, 304 Not Modified is excluded
+        // check for gitlab 404 when downloading archives
+        if ($statusCode === 404
+            && $this->config && in_array($originUrl, $this->config->get('gitlab-domains'), true)
+            && false !== strpos($fileUrl, 'archive.zip')
+        ) {
+            $result = false;
+            if ($this->retryAuthFailure) {
+                $this->promptAuthAndRetry(401);
+            }
+        }
+
+        // handle 3xx redirects, 304 Not Modified is excluded
         $hasFollowedRedirect = false;
-        if ($userlandFollow && $statusCode >= 300 && $statusCode <= 399 && $statusCode !== 304 && $this->redirects < $this->maxRedirects) {
+        if ($statusCode >= 300 && $statusCode <= 399 && $statusCode !== 304 && $this->redirects < $this->maxRedirects) {
             $hasFollowedRedirect = true;
             $result = $this->handleRedirect($http_response_header, $additionalOptions, $result);
         }
@@ -610,7 +643,7 @@ class RemoteFilesystem
             }
 
             if ($askForOAuthToken) {
-                $message = "\n".'Could not fetch ' . $this->fileUrl . ', please create a bitbucket OAuth token to ' . (($httpStatus === 401 || $httpStatus === 403) ? 'to access private repos' : 'to go over the API rate limit');
+                $message = "\n".'Could not fetch ' . $this->fileUrl . ', please create a bitbucket OAuth token to ' . (($httpStatus === 401 || $httpStatus === 403) ? 'access private repos' : 'go over the API rate limit');
                 $bitBucketUtil = new Bitbucket($this->io, $this->config);
                 if (! $bitBucketUtil->authorizeOAuth($this->originUrl)
                     && (! $this->io->isInteractive() || !$bitBucketUtil->authorizeOAuthInteractively($this->originUrl, $message))
@@ -660,11 +693,7 @@ class RemoteFilesystem
         if ($this->disableTls === false && PHP_VERSION_ID < 50600 && !stream_is_local($this->fileUrl)) {
             $host = parse_url($this->fileUrl, PHP_URL_HOST);
 
-            if (PHP_VERSION_ID >= 50304) {
-                // Must manually follow when setting CN_match because this causes all
-                // redirects to be validated against the same CN_match value.
-                $userlandFollow = true;
-            } else {
+            if (PHP_VERSION_ID < 50304) {
                 // PHP < 5.3.4 does not support follow_location, for those people
                 // do some really nasty hard coded transformations. These will
                 // still breakdown if the site redirects to a domain we don't
@@ -710,10 +739,6 @@ class RemoteFilesystem
             $headers[] = 'Connection: close';
         }
 
-        if (isset($userlandFollow)) {
-            $options['http']['follow_location'] = 0;
-        }
-
         if ($this->io->hasAuthentication($originUrl)) {
             $auth = $this->io->getAuthentication($originUrl);
             if ('github.com' === $originUrl && 'x-oauth-basic' === $auth['password']) {
@@ -735,6 +760,8 @@ class RemoteFilesystem
                 $headers[] = 'Authorization: Basic '.$authStr;
             }
         }
+
+        $options['http']['follow_location'] = 0;
 
         if (isset($options['http']['header']) && !is_array($options['http']['header'])) {
             $options['http']['header'] = explode("\r\n", trim($options['http']['header'], "\r\n"));
@@ -776,7 +803,7 @@ class RemoteFilesystem
 
             $additionalOptions['redirects'] = $this->redirects;
 
-            return $this->get($this->originUrl, $targetUrl, $additionalOptions, $this->fileName, $this->progress);
+            return $this->get(parse_url($targetUrl, PHP_URL_HOST), $targetUrl, $additionalOptions, $this->fileName, $this->progress);
         }
 
         if (!$this->retry) {

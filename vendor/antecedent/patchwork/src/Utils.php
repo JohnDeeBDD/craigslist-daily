@@ -10,6 +10,7 @@ namespace Patchwork\Utils;
 
 use Patchwork\Config;
 use Patchwork\CallRerouting;
+use Patchwork\CodeManipulation;
 
 const ALIASING_CODE = '
     namespace %s;
@@ -122,6 +123,9 @@ function interpretCallable($callback)
         $class = ltrim($class, "\\");
         return [$class, $method, $instance];
     }
+    if (substr($callback, 0, 4) === 'new ') {
+        return [ltrim(substr($callback, 4)), 'new', null];
+    }
     $callback = ltrim($callback, "\\");
     if (strpos($callback, "::")) {
         list($class, $method) = explode("::", $callback);
@@ -138,7 +142,7 @@ function callableDefined($callable, $shouldAutoload = false)
     }
     if (isset($class)) {
         return classOrTraitExists($class, $shouldAutoload) &&
-               method_exists($class, $method);
+               (method_exists($class, $method) || $method === 'new');
     }
     return function_exists($method);
 }
@@ -345,6 +349,33 @@ function wasRunAsConsoleApp()
     return isset($argv) && (
         endsWith($argv[0], 'patchwork.phar') || endsWith($argv[0], 'Patchwork.php')
     );
+}
+
+function getParameterAndArgumentLists(\ReflectionMethod $reflection = null)
+{
+    $parameters = [];
+    $arguments = [];
+    if ($reflection) {
+        foreach ($reflection->getParameters() as $p) {
+            $parameter = '$' . $p->name;
+            if ($p->isOptional()) {
+                try {
+                    $value = var_export($p->getDefaultValue(), true);
+                } catch (\ReflectionException $e) {
+                    $value = var_export(CallRerouting\INSTANTIATOR_DEFAULT_ARGUMENT, true);
+                }
+                $parameter .= ' = ' . $value;
+            }
+            $parameters[] = $parameter;
+            $arguments[] = '$' . $p->name;
+        }
+    }
+    return [join(', ' , $parameters), join(', ', $arguments)];
+}
+
+function args()
+{
+    return func_get_args();
 }
 
 class State

@@ -18,7 +18,7 @@ class RunnerClicker{
 	//This function waits X seconds, then clicks the "Run" button
 	public function enqueue_RunnerClicker() {
 		$siteURL = get_site_url();
-		$siteURL = $siteURL . "/wp-content/plugins/crg-daily/src/CRGDaily/RunnerClicker.js";
+		$siteURL = $siteURL . "/wp-content/plugins/Daily/src/CRGDaily/RunnerClicker.js";
 		wp_enqueue_script( "runner-clicker", $siteURL);
 	}
 	

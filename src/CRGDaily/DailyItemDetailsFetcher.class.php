@@ -13,7 +13,7 @@ class DailyItemDetailsFetcher{
 
 	public function enqueue_DailyItemDetailsFetcherRunnerJS(){
 		$siteURL = get_site_url();
-		wp_enqueue_script( "daily-item-details-fetcher-runner", "$siteURL/wp-content/plugins/crg-daily/src/CRGDaily/DailyItemDetailsFetcherRunner.js" );
+		wp_enqueue_script( "daily-item-details-fetcher-runner", "$siteURL/wp-content/plugins/Daily/src/CRGDaily/DailyItemDetailsFetcherRunner.js" );
 	}
 	
 	public function passDataToPhantomJSrunner(){
@@ -32,7 +32,7 @@ class DailyItemDetailsFetcher{
 	public function launchExternalScraper(){
 		ignore_user_abort(true);
 		set_time_limit(0);
-		$ThisCommand = ("cd /var/www/html/wp-content/plugins/crg-daily" . PHP_EOL. "sudo ./runIt.sh");
+		$ThisCommand = ("cd /var/www/html/wp-content/plugins/Daily" . PHP_EOL. "sudo ./runIt.sh");
 		shell_exec($ThisCommand);
 	}
 

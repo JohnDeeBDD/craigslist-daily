@@ -4,14 +4,9 @@
 
 class CraigslistScraper{
 
-    public function scrapePage($site, $Url){
+    public function scrapePage($site, $Url, $keyword = "wordpress"){
     
-    if(isset($_POST['search-keyword'])){
-    	$keyword = $_POST['search-keyword'];
-    }else{
-    	$keyword= "wordpress";
-    }
-    $Url = "https://$site.craigslist.org/search/jjj?query=$keyword&sort=date";
+    $Url = $Url . "search/jjj?query=$keyword&sort=date";
     //die($Url);
     $ch = curl_init();
 
@@ -518,5 +513,3 @@ outputi;
     return $output;	
 	}
 }
-
-?>

@@ -235,13 +235,22 @@ class WP_UnitTestCase extends PHPUnit_Framework_TestCase {
 	 * @return void
 	 */
 	protected function _backup_hooks() {
-		$globals = array( 'wp_actions', 'wp_current_filter' );
-		foreach ( $globals as $key ) {
-			self::$hooks_saved[ $key ] = $GLOBALS[ $key ];
-		}
-		self::$hooks_saved['wp_filter'] = array();
-		foreach ( $GLOBALS['wp_filter'] as $hook_name => $hook_object ) {
-			self::$hooks_saved['wp_filter'][ $hook_name ] = clone $hook_object;
+		global $wp_version;
+
+		if(version_compare($wp_version, '4.7.0','<')){
+			$globals = array( 'merged_filters', 'wp_actions', 'wp_current_filter', 'wp_filter' );
+			foreach ( $globals as $key ) {
+				self::$hooks_saved[ $key ] = $GLOBALS[ $key ];
+			}
+		} else {
+			$globals = array( 'wp_actions', 'wp_current_filter' );
+			foreach ( $globals as $key ) {
+				self::$hooks_saved[ $key ] = $GLOBALS[ $key ];
+			}
+			self::$hooks_saved['wp_filter'] = array();
+			foreach ( $GLOBALS['wp_filter'] as $hook_name => $hook_object ) {
+				self::$hooks_saved['wp_filter'][ $hook_name ] = clone $hook_object;
+			}
 		}
 	}
 
@@ -256,16 +265,27 @@ class WP_UnitTestCase extends PHPUnit_Framework_TestCase {
 	 * @return void
 	 */
 	protected function _restore_hooks() {
-		$globals = array( 'wp_actions', 'wp_current_filter' );
-		foreach ( $globals as $key ) {
-			if ( isset( self::$hooks_saved[ $key ] ) ) {
-				$GLOBALS[ $key ] = self::$hooks_saved[ $key ];
+		global $wp_version;
+
+		if(version_compare($wp_version, '4.7.0','<')){
+			$globals = array( 'merged_filters', 'wp_actions', 'wp_current_filter', 'wp_filter' );
+			foreach ( $globals as $key ) {
+				if ( isset( self::$hooks_saved[ $key ] ) ) {
+					$GLOBALS[ $key ] = self::$hooks_saved[ $key ];
+				}
 			}
-		}
-		if ( isset( self::$hooks_saved['wp_filter'] ) ) {
-			$GLOBALS['wp_filter'] = array();
-			foreach ( self::$hooks_saved['wp_filter'] as $hook_name => $hook_object ) {
-				$GLOBALS['wp_filter'][ $hook_name ] = clone $hook_object;
+		} else {
+			$globals = array( 'wp_actions', 'wp_current_filter' );
+			foreach ( $globals as $key ) {
+				if ( isset( self::$hooks_saved[ $key ] ) ) {
+					$GLOBALS[ $key ] = self::$hooks_saved[ $key ];
+				}
+			}
+			if ( isset( self::$hooks_saved['wp_filter'] ) ) {
+				$GLOBALS['wp_filter'] = array();
+				foreach ( self::$hooks_saved['wp_filter'] as $hook_name => $hook_object ) {
+					$GLOBALS['wp_filter'][ $hook_name ] = clone $hook_object;
+				}
 			}
 		}
 	}
@@ -514,32 +534,6 @@ class WP_UnitTestCase extends PHPUnit_Framework_TestCase {
 		_cleanup_query_vars();
 
 		$GLOBALS['wp']->main($parts['query']);
-	}
-
-	protected function checkRequirements() {
-		parent::checkRequirements();
-
-		// Core tests no longer check against open Trac tickets, but others using WP_UnitTestCase may do so.
-		if ( defined( 'WP_RUN_CORE_TESTS' ) && WP_RUN_CORE_TESTS ) {
-			return;
-		}
-
-		if ( WP_TESTS_FORCE_KNOWN_BUGS )
-			return;
-		$tickets = PHPUnit_Util_Test::getTickets( get_class( $this ), $this->getName( false ) );
-		foreach ( $tickets as $ticket ) {
-			if ( is_numeric( $ticket ) ) {
-				$this->knownWPBug( $ticket );
-			} elseif ( 'UT' == substr( $ticket, 0, 2 ) ) {
-				$ticket = substr( $ticket, 2 );
-				if ( $ticket && is_numeric( $ticket ) )
-					$this->knownUTBug( $ticket );
-			} elseif ( 'Plugin' == substr( $ticket, 0, 6 ) ) {
-				$ticket = substr( $ticket, 6 );
-				if ( $ticket && is_numeric( $ticket ) )
-					$this->knownPluginBug( $ticket );
-			}
-		}
 	}
 
 	/**

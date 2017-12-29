@@ -123,7 +123,7 @@ class GitBitbucketDriverTest extends TestCase
                 ),
                 array(
                     $this->originUrl,
-                    'https://api.bitbucket.org/2.0/repositories/user/repo/refs/branches?pagelen=100&fields=values.name%2Cvalues.target.hash%2Cnext&sort=-target.date',
+                    'https://api.bitbucket.org/2.0/repositories/user/repo/refs/branches?pagelen=100&fields=values.name%2Cvalues.target.hash%2Cvalues.heads%2Cnext&sort=-target.date',
                     false,
                 ),
                 array(
@@ -183,7 +183,7 @@ class GitBitbucketDriverTest extends TestCase
                 'require-dev' => array(
                     'phpunit/phpunit' => '~4.8',
                 ),
-                'time' => '2016-05-17 13:19:52',
+                'time' => '2016-05-17T13:19:52+00:00',
                 'support' => array(
                     'source' => 'https://bitbucket.org/user/repo/src/937992d19d72b5116c3e8c4a04f960e5fa270b22/?at=master',
                 ),

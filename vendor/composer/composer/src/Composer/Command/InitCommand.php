@@ -40,8 +40,8 @@ class InitCommand extends BaseCommand
     /** @var array */
     private $gitConfig;
 
-    /** @var Pool */
-    private $pool;
+    /** @var Pool[] */
+    private $pools;
 
     /**
      * {@inheritdoc}
@@ -195,6 +195,8 @@ EOT
                 $name = $git['github.user'] . '/' . $name;
             } elseif (!empty($_SERVER['USERNAME'])) {
                 $name = $_SERVER['USERNAME'] . '/' . $name;
+            } elseif (!empty($_SERVER['USER'])) {
+                $name = $_SERVER['USER'] . '/' . $name;
             } elseif (get_current_user()) {
                 $name = get_current_user() . '/' . $name;
             } else {
@@ -299,16 +301,18 @@ EOT
         $io->writeError(array('', 'Define your dependencies.', ''));
 
         $question = 'Would you like to define your dependencies (require) interactively [<comment>yes</comment>]? ';
+        $require = $input->getOption('require');
         $requirements = array();
-        if ($io->askConfirmation($question, true)) {
-            $requirements = $this->determineRequirements($input, $output, $input->getOption('require'));
+        if ($require || $io->askConfirmation($question, true)) {
+            $requirements = $this->determineRequirements($input, $output, $require);
         }
         $input->setOption('require', $requirements);
 
         $question = 'Would you like to define your dev dependencies (require-dev) interactively [<comment>yes</comment>]? ';
+        $requireDev = $input->getOption('require-dev');
         $devRequirements = array();
-        if ($io->askConfirmation($question, true)) {
-            $devRequirements = $this->determineRequirements($input, $output, $input->getOption('require-dev'));
+        if ($requireDev || $io->askConfirmation($question, true)) {
+            $devRequirements = $this->determineRequirements($input, $output, $requireDev);
         }
         $input->setOption('require-dev', $devRequirements);
     }
@@ -320,7 +324,7 @@ EOT
      */
     public function parseAuthorString($author)
     {
-        if (preg_match('/^(?P<name>[- .,\p{L}\p{N}\'’"()]+) <(?P<email>.+?)>$/u', $author, $match)) {
+        if (preg_match('/^(?P<name>[- .,\p{L}\p{N}\p{Mn}\'’"()]+) <(?P<email>.+?)>$/u', $author, $match)) {
             if ($this->isValidEmail($match['email'])) {
                 return array(
                     'name' => trim($match['name']),
@@ -370,6 +374,9 @@ EOT
                         $requirement['version'],
                         $requirement['name']
                     ));
+                } else {
+                    // check that the specified version/constraint exists before we proceed
+                    $this->findBestVersionForPackage($input, $requirement['name'], $phpVersion, $preferredStability, $requirement['version'], 'dev');
                 }
 
                 $result[] = $requirement['name'] . ' ' . $requirement['version'];
@@ -589,14 +596,16 @@ EOT
         return false !== filter_var($email, FILTER_VALIDATE_EMAIL);
     }
 
-    private function getPool(InputInterface $input)
+    private function getPool(InputInterface $input, $minimumStability = null)
     {
-        if (!$this->pool) {
-            $this->pool = new Pool($this->getMinimumStability($input));
-            $this->pool->addRepository($this->getRepos());
+        $key = $minimumStability ?: 'default';
+
+        if (!isset($this->pools[$key])) {
+            $this->pools[$key] = $pool = new Pool($minimumStability ?: $this->getMinimumStability($input));
+            $pool->addRepository($this->getRepos());
         }
 
-        return $this->pool;
+        return $this->pools[$key];
     }
 
     private function getMinimumStability(InputInterface $input)
@@ -624,24 +633,37 @@ EOT
      * @param  string                    $name
      * @param  string                    $phpVersion
      * @param  string                    $preferredStability
+     * @param  string                    $minimumStability
      * @throws \InvalidArgumentException
      * @return string
      */
-    private function findBestVersionForPackage(InputInterface $input, $name, $phpVersion, $preferredStability = 'stable')
+    private function findBestVersionForPackage(InputInterface $input, $name, $phpVersion, $preferredStability = 'stable', $requiredVersion = null, $minimumStability = null)
     {
         // find the latest version allowed in this pool
-        $versionSelector = new VersionSelector($this->getPool($input));
-        $package = $versionSelector->findBestCandidate($name, null, $phpVersion, $preferredStability);
+        $versionSelector = new VersionSelector($this->getPool($input, $minimumStability));
+        $package = $versionSelector->findBestCandidate($name, $requiredVersion, $phpVersion, $preferredStability);
 
         if (!$package) {
             // Check whether the PHP version was the problem
+            if ($phpVersion && $versionSelector->findBestCandidate($name, $requiredVersion, null, $preferredStability)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Package %s at version %s has a PHP requirement incompatible with your PHP version (%s)', $name, $requiredVersion, $phpVersion
+                ));
+            }
+            // Check whether the required version was the problem
+            if ($requiredVersion && $versionSelector->findBestCandidate($name, null, $phpVersion, $preferredStability)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Could not find package %s in a version matching %s', $name, $requiredVersion
+                ));
+            }
+            // Check whether the PHP version was the problem
             if ($phpVersion && $versionSelector->findBestCandidate($name)) {
                 throw new \InvalidArgumentException(sprintf(
-                    'Could not find package %s at any version matching your PHP version %s', $name, $phpVersion
+                    'Could not find package %s in any version matching your PHP version (%s)', $name, $phpVersion
                 ));
             }
             throw new \InvalidArgumentException(sprintf(
-                'Could not find package %s at any version for your minimum-stability (%s). Check the package spelling or your minimum-stability',
+                'Could not find a matching version of package %s. Check the package spelling, your version constraint and that the package is available in a stability which matches your minimum-stability (%s).',
                 $name,
                 $this->getMinimumStability($input)
             ));

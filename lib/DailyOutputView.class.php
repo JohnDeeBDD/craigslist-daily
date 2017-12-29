@@ -61,7 +61,10 @@ class DailyOutputView{
     	//City Info:
     	$dailyCity = get_option('crg-daily-city');
     	$CraigslistCities = new \CRGDaily\CraigslistCities();
-    	$cityKey = $CraigslistCities->returnKeyOfCity($dailyCity);
+    	
+    	$TickerPointerForListOfSites = new \CRGDaily\TickerPointerForListOfSites();
+    	$cityKey = $TickerPointerForListOfSites->pointer;
+    	
     	$totalNumberOfCities = $CraigslistCities->returnTotalNumberOfCities();
     	
     	//Counts:
@@ -82,7 +85,7 @@ class DailyOutputView{
     	
     	$output = 
 <<<OUTPUT
-<form method = 'post' action = '$siteURL/wp-admin/admin.php?page=crg-daily%2Flib%2FCraigslistAdminPage.class.php'>
+<form method = 'post' action = '$siteURL/wp-admin/admin.php?page=Daily%2Flib%2FCraigslistAdminPage.class.php'>
 	<h1>Craigslist Daily Report:</h1>
 	<strong>Current Date:</strong> $currentDate<br />
 	<strong>Live:</strong> $numberOfLiveDailys<br />

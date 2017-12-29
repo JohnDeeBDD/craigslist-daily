@@ -1,4 +1,3 @@
-@require-php-5.4
 Feature: Run a WP-CLI command
 
   Background:
@@ -201,6 +200,41 @@ Feature: Run a WP-CLI command
       | --no-launch |
       | --launch    |
 
+  Scenario Outline: Output using echo and log, success, warning and error
+    Given a WP install
+
+    # Note WP_CLI::error() terminates eval processing so needs to be last.
+    When I run `wp run <flag> --no-exit_error --return=all 'eval "WP_CLI::log( '\'log\'' ); echo '\'echo\''; WP_CLI::success( '\'success\'' ); WP_CLI::error( '\'error\'' );"'`
+    Then STDOUT should be:
+      """
+      returned: array (
+        'stdout' => 'log
+      echoSuccess: success',
+        'stderr' => 'Error: error',
+        'return_code' => 1,
+      )
+      """
+    And STDERR should be empty
+    And the return code should be 0
+
+    When I run `wp run <flag> --no-exit_error --return=all 'eval "echo '\'echo\''; WP_CLI::log( '\'log\'' ); WP_CLI::warning( '\'warning\''); WP_CLI::success( '\'success\'' );"'`
+    Then STDOUT should be:
+      """
+      returned: array (
+        'stdout' => 'echolog
+      Success: success',
+        'stderr' => 'Warning: warning',
+        'return_code' => 0,
+      )
+      """
+    And STDERR should be empty
+    And the return code should be 0
+
+    Examples:
+      | flag        |
+      | --no-launch |
+      | --launch    |
+
   Scenario Outline: Installed packages work as expected
     Given a WP install
 
@@ -220,9 +254,9 @@ Feature: Run a WP-CLI command
     | --launch    |
 
   Scenario Outline: Persists global parameters when supplied interactively
-    Given a WP install in 'subdir'
+    Given a WP install in 'foo'
 
-    When I run `wp <flag> --path=subdir run 'rewrite structure "archives/%post_id%/" --path=subdir'`
+    When I run `wp <flag> --path=foo run 'rewrite structure "archives/%post_id%/" --path=foo'`
     Then STDOUT should be:
       """
       Success: Rewrite rules flushed.

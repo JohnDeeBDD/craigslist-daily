@@ -123,7 +123,7 @@ class WordPressTest extends \Codeception\Test\Unit
 		$sut->_isMockRequest(true);
 		$page = $sut->amOnAdminPage('/');
 
-		$this->assertEquals('/wp-admin', $page);
+		$this->assertEquals('/wp-admin/index.php', $page);
 	}
 
 	/**
@@ -168,8 +168,6 @@ class WordPressTest extends \Codeception\Test\Unit
 	 */
 	public function it_should_point_to_ajax_file_when_requesting_ajax_page()
 	{
-		$page = '/wp-admin/admin-ajax.php';
-
 		$this->client->setHeaders(Argument::type('array'))->shouldBeCalled();
 
 		$this->config['adminPath'] = '/wp-admin';

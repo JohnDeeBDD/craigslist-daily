@@ -126,6 +126,130 @@ class VersionGuesserTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($commitHash, $versionArray['commit']);
     }
 
+    public function testGuessVersionReadsAndRespectsNonFeatureBranchesConfigurationForArbitraryNaming()
+    {
+        $commitHash = '03a15d220da53c52eddd5f32ffca64a7b3801bea';
+        $anotherCommitHash = '03a15d220da53c52eddd5f32ffca64a7b3801bea';
+
+        $executor = $this->getMockBuilder('\\Composer\\Util\\ProcessExecutor')
+            ->setMethods(array('execute'))
+            ->disableArgumentCloning()
+            ->disableOriginalConstructor()
+            ->getMock()
+        ;
+
+        $self = $this;
+
+        $executor
+            ->expects($this->at(0))
+            ->method('execute')
+            ->willReturnCallback(function ($command, &$output) use ($self, $commitHash, $anotherCommitHash) {
+                $self->assertEquals('git branch --no-color --no-abbrev -v', $command);
+                $output = "  arbitrary $commitHash Commit message\n* current $anotherCommitHash Another message\n";
+
+                return 0;
+            })
+        ;
+
+        $executor
+            ->expects($this->at(1))
+            ->method('execute')
+            ->willReturnCallback(function ($command, &$output, $path) use ($self, $anotherCommitHash) {
+                $self->assertEquals('git rev-list arbitrary..current', $command);
+                $output = "$anotherCommitHash\n";
+
+                return 0;
+            })
+        ;
+
+        $config = new Config;
+        $config->merge(array('repositories' => array('packagist' => false)));
+        $guesser = new VersionGuesser($config, $executor, new VersionParser());
+        $versionArray = $guesser->guessVersion(array('version' => 'self.version', 'non-feature-branches' => array('arbitrary')), 'dummy/path');
+
+        $this->assertEquals("dev-arbitrary", $versionArray['version']);
+        $this->assertEquals($anotherCommitHash, $versionArray['commit']);
+    }
+
+    public function testGuessVersionReadsAndRespectsNonFeatureBranchesConfigurationForArbitraryNamingRegex()
+    {
+        $commitHash = '03a15d220da53c52eddd5f32ffca64a7b3801bea';
+        $anotherCommitHash = '03a15d220da53c52eddd5f32ffca64a7b3801bea';
+
+        $executor = $this->getMockBuilder('\\Composer\\Util\\ProcessExecutor')
+            ->setMethods(array('execute'))
+            ->disableArgumentCloning()
+            ->disableOriginalConstructor()
+            ->getMock()
+        ;
+
+        $self = $this;
+
+        $executor
+            ->expects($this->at(0))
+            ->method('execute')
+            ->willReturnCallback(function ($command, &$output) use ($self, $commitHash, $anotherCommitHash) {
+                $self->assertEquals('git branch --no-color --no-abbrev -v', $command);
+                $output = "  latest-testing $commitHash Commit message\n* current $anotherCommitHash Another message\n";
+
+                return 0;
+            })
+        ;
+
+        $executor
+            ->expects($this->at(1))
+            ->method('execute')
+            ->willReturnCallback(function ($command, &$output, $path) use ($self, $anotherCommitHash) {
+                $self->assertEquals('git rev-list latest-testing..current', $command);
+                $output = "$anotherCommitHash\n";
+
+                return 0;
+            })
+        ;
+
+        $config = new Config;
+        $config->merge(array('repositories' => array('packagist' => false)));
+        $guesser = new VersionGuesser($config, $executor, new VersionParser());
+        $versionArray = $guesser->guessVersion(array('version' => 'self.version', 'non-feature-branches' => array('latest-.*')), 'dummy/path');
+
+        $this->assertEquals("dev-latest-testing", $versionArray['version']);
+        $this->assertEquals($anotherCommitHash, $versionArray['commit']);
+    }
+
+    public function testGuessVersionReadsAndRespectsNonFeatureBranchesConfigurationForArbitraryNamingWhenOnNonFeatureBranch()
+    {
+        $commitHash = '03a15d220da53c52eddd5f32ffca64a7b3801bea';
+        $anotherCommitHash = '03a15d220da53c52eddd5f32ffca64a7b3801bea';
+
+        $executor = $this->getMockBuilder('\\Composer\\Util\\ProcessExecutor')
+            ->setMethods(array('execute'))
+            ->disableArgumentCloning()
+            ->disableOriginalConstructor()
+            ->getMock()
+        ;
+
+        $self = $this;
+
+        $executor
+            ->expects($this->at(0))
+            ->method('execute')
+            ->willReturnCallback(function ($command, &$output) use ($self, $commitHash, $anotherCommitHash) {
+                $self->assertEquals('git branch --no-color --no-abbrev -v', $command);
+                $output = "* latest-testing $commitHash Commit message\n  current $anotherCommitHash Another message\n  master $anotherCommitHash Another message\n";
+
+                return 0;
+            })
+        ;
+
+        $config = new Config;
+        $config->merge(array('repositories' => array('packagist' => false)));
+        $guesser = new VersionGuesser($config, $executor, new VersionParser());
+        $versionArray = $guesser->guessVersion(array('version' => 'self.version', 'non-feature-branches' => array('latest-.*')), 'dummy/path');
+
+        $this->assertEquals("dev-latest-testing", $versionArray['version']);
+        $this->assertEquals($commitHash, $versionArray['commit']);
+    }
+
     public function testDetachedHeadBecomesDevHash()
     {
         $commitHash = '03a15d220da53c52eddd5f32ffca64a7b3801bea';
@@ -158,7 +282,7 @@ class VersionGuesserTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals("dev-$commitHash", $versionData['version']);
     }
 
-    public function testDetachedHeadBecomesDevHashGit2()
+    public function testDetachedFetchHeadBecomesDevHashGit2()
     {
         $commitHash = '03a15d220da53c52eddd5f32ffca64a7b3801bea';
 
@@ -166,8 +290,7 @@ class VersionGuesserTest extends \PHPUnit_Framework_TestCase
             ->setMethods(array('execute'))
             ->disableArgumentCloning()
             ->disableOriginalConstructor()
-            ->getMock()
-        ;
+            ->getMock();
 
         $self = $this;
 
@@ -179,8 +302,37 @@ class VersionGuesserTest extends \PHPUnit_Framework_TestCase
                 $output = "* (HEAD detached at FETCH_HEAD) $commitHash Commit message\n";
 
                 return 0;
-            })
-        ;
+            });
+
+        $config = new Config;
+        $config->merge(array('repositories' => array('packagist' => false)));
+        $guesser = new VersionGuesser($config, $executor, new VersionParser());
+        $versionData = $guesser->guessVersion(array(), 'dummy/path');
+
+        $this->assertEquals("dev-$commitHash", $versionData['version']);
+    }
+
+    public function testDetachedCommitHeadBecomesDevHashGit2()
+    {
+        $commitHash = '03a15d220da53c52eddd5f32ffca64a7b3801bea';
+
+        $executor = $this->getMockBuilder('\\Composer\\Util\\ProcessExecutor')
+            ->setMethods(array('execute'))
+            ->disableArgumentCloning()
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $self = $this;
+
+        $executor
+            ->expects($this->at(0))
+            ->method('execute')
+            ->willReturnCallback(function ($command, &$output) use ($self, $commitHash) {
+                $self->assertEquals('git branch --no-color --no-abbrev -v', $command);
+                $output = "* (HEAD detached at 03a15d220) $commitHash Commit message\n";
+
+                return 0;
+            });
 
         $config = new Config;
         $config->merge(array('repositories' => array('packagist' => false)));
@@ -231,6 +383,48 @@ class VersionGuesserTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals("2.0.5.0-alpha2", $versionData['version']);
     }
 
+    public function testTagBecomesPrettyVersion()
+    {
+        $executor = $this->getMockBuilder('\\Composer\\Util\\ProcessExecutor')
+            ->setMethods(array('execute'))
+            ->disableArgumentCloning()
+            ->disableOriginalConstructor()
+            ->getMock()
+        ;
+
+        $self = $this;
+
+        $executor
+            ->expects($this->at(0))
+            ->method('execute')
+            ->willReturnCallback(function ($command, &$output) use ($self) {
+                $self->assertEquals('git branch --no-color --no-abbrev -v', $command);
+                $output = "* (HEAD detached at 1.0.0) c006f0c12bbbf197b5c071ffb1c0e9812bb14a4d Commit message\n";
+
+                return 0;
+            })
+        ;
+
+        $executor
+            ->expects($this->at(1))
+            ->method('execute')
+            ->willReturnCallback(function ($command, &$output) use ($self) {
+                $self->assertEquals('git describe --exact-match --tags', $command);
+                $output = '1.0.0';
+
+                return 0;
+            })
+        ;
+
+        $config = new Config;
+        $config->merge(array('repositories' => array('packagist' => false)));
+        $guesser = new VersionGuesser($config, $executor, new VersionParser());
+        $versionData = $guesser->guessVersion(array(), 'dummy/path');
+
+        $this->assertEquals('1.0.0.0', $versionData['version']);
+        $this->assertEquals('1.0.0', $versionData['pretty_version']);
+    }
+
     public function testInvalidTagBecomesVersion()
     {
         $executor = $this->getMockBuilder('\\Composer\\Util\\ProcessExecutor')
@@ -259,5 +453,36 @@ class VersionGuesserTest extends \PHPUnit_Framework_TestCase
         $versionData = $guesser->guessVersion(array(), 'dummy/path');
 
         $this->assertEquals("dev-foo", $versionData['version']);
+    }
+
+    public function testNumericBranchesShowNicely()
+    {
+        $executor = $this->getMockBuilder('\\Composer\\Util\\ProcessExecutor')
+            ->setMethods(array('execute'))
+            ->disableArgumentCloning()
+            ->disableOriginalConstructor()
+            ->getMock()
+        ;
+
+        $self = $this;
+
+        $executor
+            ->expects($this->at(0))
+            ->method('execute')
+            ->willReturnCallback(function ($command, &$output) use ($self) {
+                $self->assertEquals('git branch --no-color --no-abbrev -v', $command);
+                $output = "* 1.5 03a15d220da53c52eddd5f32ffca64a7b3801bea Commit message\n";
+
+                return 0;
+            })
+        ;
+
+        $config = new Config;
+        $config->merge(array('repositories' => array('packagist' => false)));
+        $guesser = new VersionGuesser($config, $executor, new VersionParser());
+        $versionData = $guesser->guessVersion(array(), 'dummy/path');
+
+        $this->assertEquals("1.5.x-dev", $versionData['pretty_version']);
+        $this->assertEquals("1.5.9999999.9999999-dev", $versionData['version']);
     }
 }

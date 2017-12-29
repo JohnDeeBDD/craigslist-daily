@@ -10,13 +10,10 @@ return array(
     'WP_CLI' => array($vendorDir . '/wp-cli/wp-cli/php'),
     'Requests' => array($vendorDir . '/rmccue/requests/library'),
     'Prophecy\\' => array($vendorDir . '/phpspec/prophecy/src'),
-    'PhpSpec' => array($vendorDir . '/phpspec/phpspec/src'),
     'Oxymel' => array($vendorDir . '/nb/oxymel'),
     'Mustache' => array($vendorDir . '/mustache/mustache/src'),
     'Hautelook' => array($vendorDir . '/hautelook/phpass/src'),
     'Handlebars' => array($vendorDir . '/xamin/handlebars.php/src'),
-    'Doctrine\\Common\\Inflector\\' => array($vendorDir . '/doctrine/inflector/lib'),
-    'Diff' => array($vendorDir . '/phpspec/php-diff/lib'),
     'Behat\\Gherkin' => array($vendorDir . '/behat/gherkin/src'),
     'BaconStringUtils' => array($vendorDir . '/bacon/bacon-string-utils/src'),
 );

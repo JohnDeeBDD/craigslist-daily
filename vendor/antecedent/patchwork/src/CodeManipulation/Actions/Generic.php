@@ -26,10 +26,18 @@ function markPreprocessedFiles(&$target)
     };
 }
 
-function prependCodeToFunctions($code)
+function prependCodeToFunctions($code, $skipVoidTyped = true)
 {
-    return function(Source $s) use ($code) {
+    return function(Source $s) use ($code, $skipVoidTyped) {
         foreach ($s->all(T_FUNCTION) as $function) {
+            # Skip "use function"
+            $previous = $s->skipBack(Source::junk(), $function);
+            if ($s->is(T_USE, $previous)) {
+                continue;
+            }
+            if ($skipVoidTyped && isVoidTyped($s, $function)) {
+                continue;
+            }
             $bracket = $s->next(LEFT_CURLY, $function);
             if (Utils\generatorsSupported()) {
                 # Skip generators
@@ -44,6 +52,19 @@ function prependCodeToFunctions($code)
             }
         }
     };
+}
+
+function isVoidTyped(Source $s, $function)
+{
+    $parenthesis = $s->next(LEFT_ROUND, $function);
+    $next = $s->skip(Source::junk(), $s->match($parenthesis));
+    if ($s->is(T_USE, $next)) {
+        $next = $s->skip(Source::junk(), $s->match($s->next(LEFT_ROUND, $next)));
+    }
+    if ($s->is(':', $next)) {
+        return $s->read($s->skip(Source::junk(), $next), 1) === 'void';
+    }
+    return false;
 }
 
 function wrapUnaryConstructArguments($construct, $wrapper)
@@ -89,8 +110,8 @@ function injectCodeAfterClassDefinitions($code)
 {
     return function(Source $s) use ($code) {
         foreach ($s->all(T_CLASS) as $match) {
-            if ($s->next(T_DOUBLE_COLON, $match - 3) < $match) {
-                # ::class syntax, not a class definition
+            if ($s->is([T_DOUBLE_COLON, T_NEW], $s->skipBack(Source::junk(), $match))) {
+                # Not a proper class definition: either ::class syntax or anonymous class
                 continue;
             }
             $leftBracket = $s->next(LEFT_CURLY, $match);

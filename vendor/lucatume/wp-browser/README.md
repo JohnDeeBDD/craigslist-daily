@@ -8,18 +8,64 @@ A WordPress specific set of extensions for Codeception.
 [Example usage](https://github.com/lucatume/idlikethis).
 
 ## Installation
-To install simply require the package in the `composer.json` file like
+To install simply require the package in the `composer.json` file like this:
 
 ```json
   "require-dev":
     {
-      "lucatume/wp-browser": "~1.19"
+      "lucatume/wp-browser": "~1.21"
     }
 ```
     
 and then use `composer update` to fetch the package.  
 After that  follow the configuration instructions below.
 **Note**: there is no need to require `codeception/codeception` in the `composer.json` file as it is required by `lucatume/wp-browser` itself.
+
+## Setup and usage
+The fastest way to get up and running with Codeception and wp-browser is running the initialization command:
+
+```shell
+codecept init wpbrowser
+```
+
+After answering a bunch of questions the suites will be set up for you; wp-browser will not take care of setting up the required databases and WordPress installations for you though so do your homework.
+
+![codecept init wpbrowser](/docs/images/codecept-init-wpbrowser.png?raw=true "codecept init wpbrowser")
+
+### Updating existing projects
+If a project was set up before the latest version of the package there are two steps to take:
+
+1. stop using the `wpcept` command to generate and run tests, use `codecept` (Codeception default binary) instead.
+2. to have wp-browser specific commands aliased on the `codecept` binary [follow Codeception guide to add custom commands](http://codeception.com/docs/08-Customization#Custom-Commands); in the `codecepion.yml` file add:
+
+```yaml
+extensions:
+    commands:
+        - 'Codeception\Command\GenerateWPUnit'
+        - 'Codeception\Command\GenerateWPRestApi'
+        - 'Codeception\Command\GenerateWPRestController'
+        - 'Codeception\Command\GenerateWPRestPostTypeController'
+        - 'Codeception\Command\GenerateWPAjax'
+        - 'Codeception\Command\GenerateWPCanonical'
+        - 'Codeception\Command\GenerateWPXMLRPC'
+        - 'Codeception\Command\DbSnapshot'
+        - 'tad\Codeception\Command\SearchReplace'
+```
+
+## A word of caution
+Due to WordPress dependency on globals and constants the suites should not be ran at the same time; this means that in place of this:
+
+```bash
+codecept run
+```
+
+This is probably a better idea:
+
+```bash
+codecept run acceptance && codecept run functional && codecept run ...
+```
+
+Doing otherwise will result in fatal errors due to constants, globals and/or classes and methods attempted redefinition.
 
 ## Modules
 While the package name is the same as the first module added to it ("WPBrowser") the package will add more than one module to [Codeception](http://codeception.com/ "Codeception - BDD-style PHP testing.") to ease WordPress testing.  
@@ -28,11 +74,12 @@ Not every module will make sense or work in any suite or type of test case but h
 * WPBrowser - a PHP based, JavaScript-less and headless browser for **acceptance testing not requiring JavaScript support**
 * WPWebDriver - a Guzzle based, JavaScript capable web driver; to be used in conjunction with [a Selenium server](http://www.seleniumhq.org/download/), [PhantomJS](http://phantomjs.org/) or any real web browser for **acceptance testing requiring JavaScript support**
 * WPDb - an extension of the default codeception [Db module](http://codeception.com/docs/modules/Db) that will interact with a WordPress database to be used in **functional** and acceptance testing
-* WPLoader - loads and configures a blank WordPress installation to use as a base to set up fixtures and access WordPress defined functions and classes in **integration** tests; a wrapping of the WordPress [PhpUnit](https://phpunit.de/ "PHPUnit – The PHP Testing Framework") based [test suite provided in the WordPress repository](https://make.wordpress.org/core/handbook/testing/automated-testing/phpunit/).
+* WPLoader - loads and configures a blank WordPress installation to use as a base to set up fixtures and access WordPress defined functions and classes in **integration** tests; a wrapping of the WordPress [PhpUnit](https://phpunit.de/ "PHPUnit – The PHP Testing Framework") based [test suite provided in the WordPress repository](https://make.wordpress.org/core/handbook/testing/automated-testing/phpunit/); alternatively it cane be used to bootstrap the WordPress installation under test in the test variable scope.
 * WPBootstrapper - bootstraps an existing WordPress installation in the same variable scope of the calling function to have access to its methods.
 * WPQueries - allows for assertions to be made on WordPress database access in **integration** tests.
 * WordPress - to be used in **functional** tests it allows sending GET, POST, PUT and DELETE requests to the WordPress installation index without requiring a web server.
-* WPCLI - allows accessing the [wp-cli](http://wp-cli.org/) tool in *acceptance* and *functional* tests.
+* WPCLI - allows accessing the [wp-cli](http://wp-cli.org/) tool in *acceptance* and *functional* tests.  
+* WPFilesystem - an extension of the default Filesystem module providing methods specific to WordPress projects.  
 
 ### WPBrowser configuration
 WPBrowser extends `PHPBrowser` module hence any parameter required and available to that module is required and available in `WPBrowser` as well.  
@@ -117,7 +164,31 @@ The problem with WordPress database dumps is that the website URL address is har
 The module will try to replace the domain written in the loaded SQL dump file on the fly to match the one specified in the `url` config parameter to allow dumps to work locally with no issues.
 
 ### WPLoader configuration
-The module wraps the configuration, installation and loading of a working headless WordPress site for testing purposes.
+The module wraps the configuration, installation and loading of a working headless WordPress site for testing purposes or the simple bootstrapping of the WordPress configuration.  
+Due to WordPress reliance on globally defined variables and constants each suite using the WPLoader module should be run independently of the others; if the `suitea` and `suiteb`  suites use the `WPLoader` module with different configuration parameters avoid running all suites at the same time like this:
+```shell
+codecept run
+```
+Instead run each suite by itself like this:
+
+```shell
+codecept run suitea
+codecept run suiteb
+```
+
+This table list the differences between the two modes supported by the `WPLoader` module depending on the value of the `loadOnly` parameter:
+
+|Functionality|`loadOnly = false`|`loadOnly = true`|  
+|-------|-------|-------|  
+|Works like the [Core automated suite](https://make.wordpress.org/core/handbook/testing/automated-testing/phpunit/) |Yes|No|  
+|Offers a clean WordPress installation before the tests|Yes|No|  
+|Activates and loads specified WordPress plugins before the tests|Yes|No|  
+|Works in a transaction|Yes|No|  
+|Preserves the database state during and after the tests|No|Yes|  
+|Cleans up before and after the tests|Yes|No|  
+|Works in test cases extending `WPTestCase`|Yes|No|  
+|Works in test cases not extending `WPTestCase`|No|Yes|  
+
 An adaptation of [WordPress automated testing suite](http://make.wordpress.org/core/handbook/automated-testing/) the module exposes the suite hard-coded value as configuration parameters.  
 Since this module takes charge of setting up and cleaning the database used for the tests point it to a database that does not contain sensible data!  
 Also note that this module cannot be used together with WPDb or DB modules with the `cleanup` settings set to `true`.  
@@ -150,20 +221,19 @@ In the suite `.yml` configuration file add the module among the loaded ones
               plugins: ['hello.php', 'my-plugin/my-plugin.php']
               activatePlugins: ['hello.php', 'my-plugin/my-plugin.php']
               booststrapActions: ['my-first-action', 'my-second-action']
-              theme: 'my-theme'
 ```
 
 and configure it using the required parameters:
 
- * `multisite` - if set to `true` the WordPress installation will be a multisite one, the WP_TESTS_MULTISITE global value.
- * `wpRootFolder` - the absolute path to the root folder of the WordPress installation to use for testing, the `ABSPATH` global value.
- * `dbNAme` - the name of the database to use for the tests, will be trashed during tests so take care, will be the `DB_NAME` global.
- * `dbHost` - the host the database can be found at, will be the `DB_HOST` global.
- * `dbUser` - the database privileged user, should `GRANT ALL` on the database, will be the `DB_USER` global.
- * `dbPassword` - the password for the user, will be the `DB_PASSWORD` global.
+* `wpRootFolder` - the absolute path to the root folder of the WordPress installation to use for testing, the `ABSPATH` global value.
+* `dbName` - the name of the database to use for the tests, will be trashed during tests so take care, will be the `DB_NAME` global.
+* `dbHost` - the host the database can be found at, will be the `DB_HOST` global.
+* `dbUser` - the database privileged user, should `GRANT ALL` on the database, will be the `DB_USER` global.
+* `dbPassword` - the password for the user, will be the `DB_PASSWORD` global.
 
  Optional parameters are available to the module to reproduce the original testing suite possibilities as closely as possible:
 
+* `loadOnly` - if set to `true` the module will just load WordPress without installing it; useful to access WordPress code outside of unit and integration tests; read the paragraph "WPLoader to bootstrap WordPress"; setting this parameter to `true` makes all the ones below superfluous.
 * `isolatedInstall` - bool, def. `true`, whether the WordPress installation should happen in a separate process from the tests or not; running the installation in an isolated process is **the recommended way** and the default one.
 * `wpDebug` - bool, def. `true`, the `WP_DEBUG` global value.
 * `multisite` - bool, def. `false`, if set to `true` will create a multisite installation, the `WP_TESTS_MULTISITE` global value.
@@ -203,6 +273,27 @@ and configure it using the required parameters:
     The `template` will be set to `parent`, the `stylesheet` will be set to `child`.
 
 **A word of caution**: right now the only way to write tests able to take advantage of the suite is to use the `WP_UnitTestCase` test case class; while the module will load fine and will raise no problems `WP_UnitTestCase` will take care of handling the database as intended and using another test case class will almost certainly result in an error if the test case defines more than one test method.
+
+#### WPLoader to only bootstrap WordPress
+If the need is to just bootstrap the WordPress installation in the context of the tests variable scope then the `WPLoader` module `loadOnly` parameter should be set to `true`; this could be the case for functional tests in need to access WordPress provided methods, functions and values.  
+An example configuration for the module in this mode is this one:
+
+```yaml
+  modules:
+      enabled:
+          - WPLoader
+      config:
+          WPLoader:
+              loadOnly: true 
+              wpRootFolder: "/Users/User/www/wordpress"
+              dbName: "wpress-tests"
+              dbHost: "localhost"
+              dbUser: "root"
+              dbPassword: "root"
+```
+
+With reference to the table above the module will not take care of the test WordPress installation state before and after the tests, the installed and activated plugins, and theme.  
+The module can be used in conjuction with a `WPDb` module to provide the tests with a WordPress installation suiting the tests at hand.
 
 ### WPBootstrapper configuration
 The module will bootstrap a WordPress installation loading its `wp-load.php` file.   
@@ -305,89 +396,57 @@ $I->cli('wp post create --post_title=Foo --post_content=Foo --post_excerpt=Foo -
 Global and local [configuration files](http://wp-cli.org/config/#config-file) will be ignored; any additional parameter should be specified inline.  
 This prevents tests from running commands that would impact the WordPress installation in a way that would not be reversible (e.g. create or modify the `.htaccess` file); as a general guideline the wrapper is meant to be used to perform database reversible operations.
 
-### The `wpcept` command
-The package will create a link to the `bin/wpcept` script file; that's an extension of Codeception own `codecept` CLI application to allow for a WordPress specific setup.
+### WPFilesystem module configuration
+This module can be used in any level of testing and provides methods to navigate and manipulate the WordPress file and folder structure.  
+At a minimum the module requires specifying the WordPress installation root folder:
 
-#### bootstrap
-The CLI application adds the `bootstrap` command argument to allow for a quick WordPress testing environment setup replacing the default bootstrap configuration created by Codeception.
-
-```sh
-wpcept bootstrap
+```yaml
+modules:
+    enabled:
+        WPFilesystem:
+            wpRootFolder: "/var/www/wordpress"
 ```
 
-The command will generate the "Unit", "Integration", "Functional" and "Acceptance" suites following the same pattern used by Codeception but with WordPress specific modules:
+* `wpRootFolder` - string, required; the path to the WordPress installation root folder; the folder that contains the `wp-load.php` file
+* `themes` - string, optional; the path, relative to the WordPress root folder or an absolute path, to the themes folder
+* `plugins` - string, optional; the path, relative to the WordPress root folder or an absolute path, to the plugins folder.
+* `mu-plugins` - string, optional; the path, relative to the WordPress root folder or an absolute path, to the must-use plugins folder
+* `uploads` - string, optional; the path, relative to the WordPress root folder or an absolute path, to the uploads folder
 
-* Unit with `Asserts` and helper modules
-* Integration with `WPLoader` and helper modules
-* Functional with `Filesystem`, `WPDb`, `WordPress` and helper modules
-* Acceptance with `WPBrowser`, `WPDb` and helper modules
+If any one of the optional configuration paths (`plugins`, `mu-plugins`, `themes`, `uploads`) is not specified it will default to the WordPress standard file structure:
 
-Command line options can be passed to set the suites configurations to override the defaults:
-
-* `--wpRootFolder=<value>` - the local WordPress installation folder, the folder containing the `wp-load.php` file
-* `--dbHost=<value>` to set the database host
-* `--dbName=<value>` - to set the database name
-* `--dbUser=<value>` - to set the database user
-* `--dbPassword=<value>` - to set the database password
-* `--tablePrefix=<value>` - to set the table prefix of the database used for acceptance and functional
-* `--integrationTablePrefix=<value>` - if the same database is used for integration testing too then integration tests will use this table prefix
-* `--url=<value>` - the local installation site URL
-* `--adminUsername=<value>` - the login name of the local installation administrator
-* `--adminPassword=<value>` - the passworf of the local installation administrator
-* `--adminPath=<value>` - the path, **relative to the WordPress installation root folder**, to the admin area
-* `--type=[theme|plugin]` - what WordPress component is being tested in integration tests, defaults to `plugin`
-* `--theme=<value>` - the theme that should be activated in integration tests, requires `type` to be set to `theme`
-* `--plugins=<value>` - a comma separated list of the plugin(s) that should be activated in integration tests
-
-Please note that default Codeception suite bootstrapping is available using the `codecept bootstrap` command; use the `--interactive` option to scaffold the test suites configuration using a guided process.
-
-```sh
-wpcept bootstrap --interactive
+```
+wpRootfolder
+  \
+    wp-content
+      \
+        themes
+        plugins
+        mu-plugins
+        uploads
 ```
 
-#### bootstrap:pyramid
-The `bootstrap:pyramid` command argument allows for a quick WordPress testing environment setup following the [test pyramid](http://martinfowler.com/bliki/TestPyramid.html) suite organization.  
-The command
+To override the default structure specify the optional paths:
 
-```sh
-wpcept bootstrap:pyramid
+
+```yaml
+modules:
+    enabled:
+        WPFilesystem:
+            wpRootFolder: "/var/www/wp"
+            plugins: "/app/plugins" 
+            mu-plugins: "/app/mu-plugins" 
+            themes: "/themes" 
+            uploads: "/content" 
 ```
 
-will generate the "UI", "Service", "Wpunit" and "Unit" suites and will take care of setting up default modules and their settings for each like:
-
-* Unit with `Asserts` and `UnitHelper` modules
-* Integration with `WPLoader` and helper modules
-* Functional with `Filesystem`, `WPDb`, `WordPress` and helper modules
-* Acceptance with `WPBrowser`, `WPDb` and helper modules
-
-Command line options can be passed to set the suites configurations to override the defaults:
-
-* `--wpRootFolder=<value>` - the local WordPress installation folder, the folder containing the `wp-load.php` file
-* `--dbHost=<value>` to set the database host
-* `--dbName=<value>` - to set the database name
-* `--dbUser=<value>` - to set the database user
-* `--dbPassword=<value>` - to set the database password
-* `--tablePrefix=<value>` - to set the table prefix of the database used for ui and service tests
-* `--integrationTablePrefix=<value>` - if the same database is used for integration testing too then integration tests will use this table prefix
-* `--url=<value>` - the local installation site URL
-* `--adminUsername=<value>` - the login name of the local installation administrator
-* `--adminPassword=<value>` - the password of the local installation administrator
-* `--adminPath=<value>` - the path, **relative to the WordPress installation root folder**, to the admin area
-* `--type=[theme|plugin]` - what WordPress component is being tested in integration tests, defaults to `plugin`
-* `--theme=<value>` - the theme that should be activated in integration tests, requires `type` to be set to `theme`
-* `--plugins=<value>` - a comma separated list of the plugin(s) that should be activated in integration tests
-
-Please note that default Codeception suite bootstrapping is available using the `codecept bootstrap` command; use the `--interactive` option to scaffold the test suites configuration using a guided process.
-
-```sh
-wpcept bootstrap --interactive
-```
+### Additional commands
 
 #### generate:wpunit
 Generates a test case extending the `\Codeception\TestCase\WPTestCase` class using the
 
 ```sh
-  wpcept generate:wpunit suite SomeClass
+  codecept generate:wpunit suite SomeClass
 ```
 
 The command will generate a skeleton test case like
@@ -420,7 +479,7 @@ class SomeClassTest extends \Codeception\TestCase\WPTestCase
 Generates a test case extending the `\Codeception\TestCase\WPRestApiTestCase` class using the
 
 ```sh
-  wpcept generate:wprest suite SomeClass
+  codecept generate:wprest suite SomeClass
 ```
 
 The command will generate a skeleton test case like
@@ -453,7 +512,7 @@ class SomeClassTest extends \Codeception\TestCase\WPRestApiTestCase
 Generates a test case extending the `\Codeception\TestCase\WPRestControllerTestCase` class using the
 
 ```sh
-  wpcept generate:wprest suite SomeClass
+  codecept generate:wprest suite SomeClass
 ```
 
 The command will generate a skeleton test case like
@@ -485,7 +544,7 @@ class SomeClassTest extends \Codeception\TestCase\WPRestControllerTestCase
 Generates a test case extending the `\Codeception\TestCase\WPRestPostTypeControllerTestCase` class using the
 
 ```sh
-  wpcept generate:wprest suite SomeClass
+  codecept generate:wprest suite SomeClass
 ```
 
 The command will generate a skeleton test case like
@@ -518,7 +577,7 @@ class SomeClassTest extends \Codeception\TestCase\WPRestPostTypeControllerTestCa
 Generates a test case extending the `\Codeception\TestCase\WPAjaxTestCase` class using the
 
 ```sh
-  wpcept generate:wpajax suite SomeClass
+  codecept generate:wpajax suite SomeClass
 ```
 
 The command will generate a skeleton test case like
@@ -551,7 +610,7 @@ class SomeClassTest extends \Codeception\TestCase\WPAjaxTestCase
 Generates a test case extending the `\Codeception\TestCase\WPXMLRPCTestCase` class using the
 
 ```sh
-  wpcept generate:wpxmlrpc suite SomeClass
+  codecept generate:wpxmlrpc suite SomeClass
 ```
 
 The command will generate a skeleton test case like
@@ -584,11 +643,10 @@ class SomeClassTest extends \Codeception\TestCase\WPXMLRPCTestCase
 Generates a test case extending the `\Codeception\TestCase\WPCanonicalTestCase` class using the
 
 ```sh
-  wpcept generate:wpcanonical suite SomeClass
+  codecept generate:wpcanonical suite SomeClass
 ```
 
 The command will generate a skeleton test case like
-
 
 ```php
 <?php
@@ -615,17 +673,6 @@ class SomeClassTest extends \Codeception\TestCase\WPCanonicalTestCase
 
 Any other `codecept` option remains intact and available. 
 
-#### generate:phpunitBootstrap
-This command will generate the files required to run functional tests defined in test case classes extending the `WP_UnitTestCase` class.  
-The method will read the `codeception.yml` file to point PHPUnit `phpunit.xml` file to the tests folder and set up a `phpunit-bootstrap.php` file in the tests folder.  
-The command has the following arguments
-
-`suites` - a comma separated list of suites the tests should run, def. `functional`
-`suffix` - the suffix of test classes PHPUnit should run, def. `Test`
-`vendor` - the path, relative to the project root folder, to the vendor folder, def. `vendor`
-
-Each call to the command will re-generate the `phpunit.xml` and `tests/phpunit-bootstrap.php` files, changes made to the `phpunit` element attributes in the `phpunit.xml` file will be preserved across regenerations.
-
 ### Management commands
 The package comes with some commands meant to make the management and sharing of a shared repository easier.
 Some are wrappers around external commands (like `search-replace` and `setup`) or native to the WPBrowser package.  
@@ -633,7 +680,7 @@ All the commands share the `--save-config` option: when used in flag mode any **
 As an example running:
 
 ```bash
-wpcept db:snapshot issue3344 wp-tests --local-url=http://wp-tests.dev --dist-url=http://acme.tests.dev --host=192.54.0.1 --user=db --pass=db --save-config
+codecept db:snapshot issue3344 wp-tests --local-url=http://wp-tests.dev --dist-url=http://acme.tests.dev --host=192.54.0.1 --user=db --pass=db --save-config
 ```
 
 will generate a  `command-config.yml` file like this:
@@ -654,14 +701,14 @@ db:snapshot:
 that will allow to shorten the next invocation of the command considerably on the next run:
 
 ```bash
-wpcept db:snapshot issue44566 wp-tests 
+codecept db:snapshot issue44566 wp-tests 
 ```
 
 Multiple commands can and will write their own configuration in the `command-config.yml` file.  
 It is possible to override saved configuration values specifying the option in the command:
 
 ```bash
-wpcept db:snapshot issue22444 wp-tests --user=root --host=localhost
+codecept db:snapshot issue22444 wp-tests --user=root --host=localhost
 ```
 
 #### search-replace
@@ -691,12 +738,12 @@ A typical flow using the command would be:
 * the developer creates a local (to be used in local tests) and distribution (to be shared with other team members) dump of his/her local database using:
 
   ```bash
-  wpcept db:snapshot issue3344 wp-tests --local-url=http://wp-tests.dev --dist-url=http://acme.tests.dev
+  codecept db:snapshot issue3344 wp-tests --local-url=http://wp-tests.dev --dist-url=http://acme.tests.dev
   ```
 * any other developer on the team can use the `search-replace` command to localize the distribution version of the database dump to suite his/her setup:
   
   ```bash
-  wpcept search-replace http://acme.tests.dev http://local.dev ./tests/_data/issue3344.dist.sql ./tests/_data/issue3344.sql
+  codecept search-replace http://acme.tests.dev http://local.dev ./tests/_data/issue3344.dist.sql ./tests/_data/issue3344.sql
   ```
 
 ### ExtendedDb configuration
@@ -888,6 +935,10 @@ The module is meant to be a WordPress specific extension of the `Db` module and 
 * haveMenuInDatabase
 * haveMenuItemInDatabase
 * seeTermRelationshipInDatabase
+* haveAttachmentInDatabase (requires `WPFilesystem` module)
+* dontHaveAttachmentOnDatabase
+* seeAttachmentInDatabase
+* dontSeeAttachmentInDatabase
 
 See source code for more detail.
 
@@ -1069,7 +1120,7 @@ extensions:
 The arguments are:
 
 * `mode` - can be `plugin` or `theme` and indicates whether the current Codeception root folder being symlinked is a plugin or a theme one
-* `destination` - the absolute path to the WordPress local installation plugins or themes folder; to take the neverending variety of possible setups into account the extension will make no checks on the nature of the destination: could be any folder.
+* `destination` - the absolute path to the WordPress local installation plugins or themes folder; to take the never ending variety of possible setups into account the extension will make no checks on the nature of the destination: could be any folder.
 * `rootFolder` - optional absolute path to the WordPress plugin or theme to be symlinked root folder; will default to the Codeception root folder
 
 ### Copier
@@ -1142,7 +1193,35 @@ extensions:
                 multisite: /var/www/mu/wp-content/plugins
 ```
 When running a suite specifying more than one environment like
+
 ```bash
 codecept run acceptance --env foo,baz,multisite
 ```
-Then the extension will use the first matched one, in the case above the `multisite` destination will be used.
+Then the extension will use the first matched one, in the case above the `multisite` destination will be used.  
+The `rootFolder` parameter too can be set to be environment-aware and it will follow the same logic as the destination:
+
+```yaml
+extensions:
+    enabled:
+        - tad\WPBrowser\Extension\Symlinker
+    config:
+        tad\WPBrowser\Extension\Symlinker:
+            mode: plugin
+            rootFolder:
+                dev: /
+                dist: /dist
+                default: /
+            destination:
+                default: /var/www/dev/wp-content/plugins
+                dev: /var/www/dev/wp-content/plugins
+                dist: /var/www/dist/wp-content/plugins
+```
+
+Whenrunning a suite specifying more than one environment like
+
+```bash
+codecept run acceptance --env dist
+```
+
+Then the extension will symlink the files from `/dist` into the `/var/www/dist/wp-content/plugins` folder.
+

@@ -1,8 +1,5 @@
 {
     "require-dev": {
-        "lucatume/wp-browser": "^1.19"
-    },
-    "require": {
-        "phpspec/phpspec": "^3.3"
+        "lucatume/wp-browser": "^1.21"
     }
 }

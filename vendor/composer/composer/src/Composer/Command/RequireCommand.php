@@ -74,7 +74,7 @@ EOT
         $io = $this->getIO();
 
         $newlyCreated = !file_exists($file);
-        if (!file_exists($file) && !file_put_contents($file, "{\n}\n")) {
+        if ($newlyCreated && !file_put_contents($file, "{\n}\n")) {
             $io->writeError('<error>'.$file.' could not be created.</error>');
 
             return 1;
@@ -113,7 +113,7 @@ EOT
             $preferredStability = $composer->getPackage()->getMinimumStability();
         }
 
-        $phpVersion = $this->repos->findPackage('php', '*')->getVersion();
+        $phpVersion = $this->repos->findPackage('php', '*')->getPrettyVersion();
         $requirements = $this->determineRequirements($input, $output, $input->getArgument('packages'), $phpVersion, $preferredStability);
 
         $requireKey = $input->getOption('dev') ? 'require-dev' : 'require';
@@ -175,12 +175,7 @@ EOT
             ->setPreferLowest($input->getOption('prefer-lowest'))
         ;
 
-        $exception = null;
-        try {
-            $status = $install->run();
-        } catch (\Exception $exception) {
-            $status = 1;
-        }
+        $status = $install->run();
         if ($status !== 0) {
             if ($newlyCreated) {
                 $io->writeError("\n".'<error>Installation failed, deleting '.$file.'.</error>');
@@ -189,9 +184,6 @@ EOT
                 $io->writeError("\n".'<error>Installation failed, reverting '.$file.' to its original content.</error>');
                 file_put_contents($json->getPath(), $composerBackup);
             }
-        }
-        if ($exception) {
-            throw $exception;
         }
 
         return $status;

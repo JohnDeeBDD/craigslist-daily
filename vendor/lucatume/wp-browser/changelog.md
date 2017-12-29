@@ -4,6 +4,131 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ##[unreleased] Unreleased
 
+##[1.21.23] 2017-12-13;
+### Fixed
+- fixed an `ExtendedDbDriver` signature issue (thanks @kouratoras)
+- better handling of user input and error in `wpbrowser` template
+- fixed an issue where files with `declare` type instructions would trigger fatal errors when using `WPLoader` module in `multisite` mode (thanks @jbrinley)
+
+##[1.21.22] 2017-11-27;
+### Fixed
+- serialization issue in WP-Loader module (thanks @johnnyhuy)
+
+##[1.21.21] 2017-11-24;
+### Fixed
+- user defined suite names are now respected during `init wpbrowser` based scaffolding process
+
+##[1.21.20] 2017-10-10;
+### Fixed
+- a WordPress 4.6 related issue with hook saving (issue #108)
+
+##[1.21.19] 2017-10-09;
+### Fixed
+- Travis CI tests
+- restored the creation of blog tables when using `WPDb::haveBlogInDatabase` or `WPDb::haveManyBlogsInDatabase` methods
+
+##[1.21.18] 2017-09-26
+### Fixed
+- `WPDb`: a more efficient regex to parse the dump (thanks @slaFFik)
+- `WPDb`: avoid running the dump through URL replacement functions if `urlReplacement` has been deactivated in config (thanks @slaFFik)
+- `WPDb`: avoid running the dump through white space removal, thus loading it in memory, if `populator` is being used (thanks @slaFFik)
+
+##[1.21.17] 2017-08-21
+### Fixed
+- an issue where some checks could be made by the `WPTestCase` class on non-existing folders
+
+##[1.21.16] 2017-08-12
+### Fixed
+- an issue in the `WPFilesystem` module that would not allow scaffolding mu-plugins
+
+##[1.21.15] 2017-08-09
+### Fixed and changed
+- moved the `rrmdir` function to wp-browser `functions.php` file and removed it from the `tests/_support/functions.php` file
+
+##[1.21.14] 2017-08-02
+### Fixed
+- an issue with symbolic linking of the root dir
+
+##[1.21.13] 2017-07-28
+### Fixed
+- more sane support for `--quiet` and `--no-interaction` options in `WPBrowser` template (issue #95 cont.)
+
+##[1.21.12] 2017-07-26
+### Fixed
+- support for `--quiet` and `--no-interaction` options in `WPBrowser` template (issue #95)
+
+##[1.21.11] 2017-07-19
+### Fixed
+- an issue preventing writes in the `WPFilesystem::writeToUploadedFile` method
+
+### Added
+- `attachment` post type methods to the `WPDb` module
+
+##[1.21.10] 2017-07-14
+### Added
+- support for environments in the `rootFolder` parameter of the Symlinker extension
+
+##[1.21.9] 2017-07-14
+### Fixed
+- issue where users table would be set to `wp_users` in `WPDb::grabUserIdFromDatabase()` method (thanks @gundamew)
+
+##[1.21.8] 2017-07-12
+### Added
+- first version of the `WPFilesystem` module
+
+##[1.21.7] 2017-07-07
+### Fixed
+- removed excessive bracket in `WPBrowser` template
+
+##[1.21.6] 2017-07-06
+### Changed
+- switch to `.env` based configuration for tests
+- fix an issue where in some cases (e.g. CLI) `WPLoader` module set to `loadOnly: true` would generate errors
+
+##[1.21.5] 2017-06-30
+### Fixed
+- issue with `WPDb::haveOrUpdateInDatabase` method
+
+##[1.21.4] 2017-06-21
+### Fixed
+- `WPDb` module sql dump file handling issue (#81)
+- `WordPress` module issue related to IP spoofing
+
+##[1.21.3] 2017-06-07
+### Fixed
+- load file required by `attachment` factory before accessing it (`WPLoader` module in `loadOnly` configuration)
+- domain replacement in SQL dump file in `WPDb` module
+
+##[1.21.2] 2017-06-06
+### Fixed
+- added missing vars to bootstrap template
+
+##[1.21.1] 2017-06-05
+### Fixed
+- PHP7 syntax issue
+
+##[1.21.0] 2017-06-05
+### Added
+- support for Codeception `2.3`
+- experimental support for PHPUnit `6.0`
+- support for user-land SQL dump file import in `WPDb` module (thanks @sc0ttkclark)
+
+### Changed
+- the `wpcept` command is now deprecated in favour of a template based solution
+
+### Removed
+- the `generate:phpunitbootstrap` command
+
+##[1.20.1] 2017-05-23
+### Changed
+- locked `codeception/codeception` version at `~2.2.0` while support for version `2.3` is developed
+- moved the `codeception/codeception` requirement to the `require` section
+- updated the code of `dontHaveInDatabase` type methods of `WPDb` to remove meta of handled objects by default
+ 
+##[1.20.0] 2017-05-15
+### Added
+- added support for "just loading WordPress" to the WPLoader module using the `loadOnly` parameter
+
 ##[1.19.15] 2017-05-01
 ### Changed
 - added Y offset to the plugin activation functions to avoid overlap with the admin bar
@@ -534,7 +659,33 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Reference to ModuleConfigException class in WPLoader class.
 
-[unreleased]: https://github.com/lucatume/wp-browser/compare/1.19.15...HEAD
+[unreleased]: https://github.com/lucatume/wp-browser/compare/1.21.22...HEAD
+[1.21.23]: https://github.com/lucatume/wp-browser/compare/1.21.22...1.21.23
+[1.21.22]: https://github.com/lucatume/wp-browser/compare/1.21.21...1.21.22
+[1.21.21]: https://github.com/lucatume/wp-browser/compare/1.21.20...1.21.21
+[1.21.20]: https://github.com/lucatume/wp-browser/compare/1.21.19...1.21.20
+[1.21.19]: https://github.com/lucatume/wp-browser/compare/1.21.18...1.21.19
+[1.21.18]: https://github.com/lucatume/wp-browser/compare/1.21.17...1.21.18
+[1.21.17]: https://github.com/lucatume/wp-browser/compare/1.21.16...1.21.17
+[1.21.16]: https://github.com/lucatume/wp-browser/compare/1.21.15...1.21.16
+[1.21.15]: https://github.com/lucatume/wp-browser/compare/1.21.14...1.21.15
+[1.21.14]: https://github.com/lucatume/wp-browser/compare/1.21.13...1.21.14
+[1.21.13]: https://github.com/lucatume/wp-browser/compare/1.21.12...1.21.13
+[1.21.12]: https://github.com/lucatume/wp-browser/compare/1.21.11...1.21.12
+[1.21.11]: https://github.com/lucatume/wp-browser/compare/1.21.10...1.21.11
+[1.21.10]: https://github.com/lucatume/wp-browser/compare/1.21.9...1.21.10
+[1.21.9]: https://github.com/lucatume/wp-browser/compare/1.21.8...1.21.9
+[1.21.8]: https://github.com/lucatume/wp-browser/compare/1.21.7...1.21.8
+[1.21.7]: https://github.com/lucatume/wp-browser/compare/1.21.6...1.21.7
+[1.21.6]: https://github.com/lucatume/wp-browser/compare/1.21.5...1.21.6
+[1.21.5]: https://github.com/lucatume/wp-browser/compare/1.21.4...1.21.5
+[1.21.4]: https://github.com/lucatume/wp-browser/compare/1.21.2...1.21.4
+[1.21.3]: https://github.com/lucatume/wp-browser/compare/1.21.2...1.21.3
+[1.21.2]: https://github.com/lucatume/wp-browser/compare/1.21.1...1.21.2
+[1.21.1]: https://github.com/lucatume/wp-browser/compare/1.21.0...1.21.1
+[1.21.0]: https://github.com/lucatume/wp-browser/compare/1.20.1...1.21.0
+[1.20.1]: https://github.com/lucatume/wp-browser/compare/1.20.0...1.20.1
+[1.20.0]: https://github.com/lucatume/wp-browser/compare/1.19.15...1.20.0
 [1.19.15]: https://github.com/lucatume/wp-browser/compare/1.19.14...1.19.15
 [1.19.14]: https://github.com/lucatume/wp-browser/compare/1.19.13...1.19.14
 [1.19.13]: https://github.com/lucatume/wp-browser/compare/1.19.12...1.19.13

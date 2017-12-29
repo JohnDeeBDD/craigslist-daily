@@ -24,7 +24,8 @@ use tad\WPBrowser\Iterators\Filters\SetupTearDownQueriesFilter;
  */
 class WPQueries extends Module
 {
-	/**
+
+    /**
 	 * @var array
 	 */
 	protected $filteredQueries = [];
@@ -103,7 +104,7 @@ class WPQueries extends Module
 	{
 		$this->readQueries();
 		$message = $message ? $message : 'Failed asserting that queries were made.';
-		\PHPUnit_Framework_Assert::assertNotEmpty($this->filteredQueries, $message);
+        \PHPUnit_Framework_Assert::assertNotEmpty($this->filteredQueries, $message);
 	}
 
 	private function readQueries()
@@ -147,7 +148,7 @@ class WPQueries extends Module
 	{
 		$this->readQueries();
 		$message = $message ? $message : 'Failed asserting that no queries were made.';
-		\PHPUnit_Framework_Assert::assertEmpty($this->filteredQueries, $message);
+        \PHPUnit_Framework_Assert::assertEmpty($this->filteredQueries, $message);
 	}
 
 	/**

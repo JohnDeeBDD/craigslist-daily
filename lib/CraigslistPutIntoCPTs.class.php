@@ -20,10 +20,10 @@ class  CraigslistPutIntoCPTs{
 		$siteString = $this->siteString;
 		$numberAddedOnLastScrape = 0;
 		foreach($sausages as $anchorLink){
-
-			$replaceString = 'target = "_BLANK" href="' . $siteString;
-			$anchorLink = str_replace('href="', $replaceString, $anchorLink);
-			$anchorLink = str_replace("'", "\'", $anchorLink);
+            //echo ($anchorLink . "<br />");
+			//$replaceString = 'target = "_BLANK" href="' . $siteString;
+			//$anchorLink = str_replace('href="', $replaceString, $anchorLink);
+			//$anchorLink = str_replace("'", "\'", $anchorLink);
 			$DailyItem = new \CRGDaily\DailyItem();
 			$DailyItem->set_anchorLink($anchorLink);
 			$titleMinusAnchorTags = $DailyItem->get_title();

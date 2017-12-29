@@ -68,7 +68,7 @@ class DailyItem{
 	}
 	public function return_fetchThePhoneNumberAnchorLink($ID){
 		if($this->phone === FALSE){
-			return ("<span><a class = 'next-fetch-clicker' id = 'next-fetch-click-$ID' href = '/wp-admin/admin.php?page=crg-daily%2Flib%2FCraigslistAdminPage.class.php&fetch-phone-number=$ID'>Fetch pending...</a></span>");
+			return ("<span><a class = 'next-fetch-clicker' id = 'next-fetch-click-$ID' href = '/wp-admin/admin.php?page=Daily%2Flib%2FCraigslistAdminPage.class.php&fetch-phone-number=$ID'>Fetch pending...</a></span>");
 		}else{
 			return ($this->phone);
 		}	

@@ -18,8 +18,9 @@ class DateTimeComparator extends ObjectComparator
     /**
      * Returns whether the comparator can compare two values.
      *
-     * @param  mixed $expected The first value to compare
-     * @param  mixed $actual   The second value to compare
+     * @param mixed $expected The first value to compare
+     * @param mixed $actual   The second value to compare
+     *
      * @return bool
      */
     public function accepts($expected, $actual)
@@ -40,15 +41,25 @@ class DateTimeComparator extends ObjectComparator
      *
      * @throws ComparisonFailure
      */
-    public function assertEquals($expected, $actual, $delta = 0.0, $canonicalize = false, $ignoreCase = false, array &$processed = array())
+    public function assertEquals($expected, $actual, $delta = 0.0, $canonicalize = false, $ignoreCase = false, array &$processed = [])
     {
-        $delta = new \DateInterval(sprintf('PT%sS', abs($delta)));
+        /** @var \DateTimeInterface $expected */
+        /** @var \DateTimeInterface $actual */
+
+        $delta = new \DateInterval(sprintf('PT%dS', abs($delta)));
+
+        $actualClone = clone $actual;
+        $actualClone->setTimezone(new \DateTimeZone('UTC'));
 
         $expectedLower = clone $expected;
-        $expectedUpper = clone $expected;
+        $expectedLower->setTimezone(new \DateTimeZone('UTC'));
+        $expectedLower->sub($delta);
 
-        if ($actual < $expectedLower->sub($delta) ||
-            $actual > $expectedUpper->add($delta)) {
+        $expectedUpper = clone $expected;
+        $expectedUpper->setTimezone(new \DateTimeZone('UTC'));
+        $expectedUpper->add($delta);
+
+        if ($actual < $expectedLower || $actual > $expectedUpper) {
             throw new ComparisonFailure(
                 $expected,
                 $actual,
@@ -64,14 +75,11 @@ class DateTimeComparator extends ObjectComparator
      * Returns an ISO 8601 formatted string representation of a datetime or
      * 'Invalid DateTimeInterface object' if the provided DateTimeInterface was not properly
      * initialized.
-     *
-     * @param  \DateTimeInterface $datetime
-     * @return string
      */
-    private function dateTimeToString($datetime)
+    private function dateTimeToString(\DateTimeInterface $datetime): string
     {
         $string = $datetime->format('Y-m-d\TH:i:s.uO');
 
-        return $string ? $string : 'Invalid DateTimeInterface object';
+        return $string ?: 'Invalid DateTimeInterface object';
     }
 }

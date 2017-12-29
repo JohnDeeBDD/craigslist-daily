@@ -2,9 +2,9 @@
 
 namespace Codeception\Command;
 
+use Codeception\CustomCommandInterface;
 use Codeception\Lib\Generator\WPUnit;
 use Codeception\Lib\Generator\WPUnit as WPUnitGenerator;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -19,62 +19,71 @@ use Symfony\Component\Console\Output\OutputInterface;
  * * `wpcept g:wpunit unit "App\User`
  *
  */
-class GenerateWPUnit extends Command
-{
-	use Shared\FileSystem;
-	use Shared\Config;
+class GenerateWPUnit extends GenerateTest implements CustomCommandInterface {
 
-	const SLUG = "generate:wpunit";
+    use Shared\FileSystem;
+    use Shared\Config;
 
-	public function getDescription()
-	{
-		return 'Generates a WPTestCase: a WP_UnitTestCase extension with Codeception additions.';
-	}
+    /**
+     * returns the name of the command
+     *
+     * @return string
+     */
+    public static function getCommandName() {
+        return "generate:wpunit";
+    }
 
-	public function execute(InputInterface $input, OutputInterface $output)
-	{
-		$suite = $input->getArgument('suite');
-		$class = $input->getArgument('class');
+    public function getDescription() {
+        return 'Generates a WPTestCase: a WP_UnitTestCase extension with Codeception super-powers.';
+    }
 
-		$config = $this->getSuiteConfig($suite, $input->getOption('config'));
+    public function execute(InputInterface $input, OutputInterface $output) {
+        $suite = $input->getArgument('suite');
+        $class = $input->getArgument('class');
 
-		$path = $this->buildPath($config['path'], $class);
+        $config = $this->getSuiteConfig($suite);
 
-		$filename = $this->completeSuffix($this->getClassName($class), 'Test');
-		$filename = $path . $filename;
+        $filename = $this->buildPath($config['path'], $class);
 
-		$gen = $this->getGenerator($config, $class);
+        $gen = $this->getGenerator($config, $class);
 
-		$res = $this->save($filename, $gen->produce());
-		if (!$res) {
-			$output->writeln("<error>Test $filename already exists</error>");
-			exit;
-		}
+        $res = $this->createFile($filename, $gen->produce());
 
-		$output->writeln("<info>Test was created in $filename</info>");
-	}
+        if ( ! $res) {
+            $output->writeln("<error>Test $filename already exists</error>");
+            exit;
+        }
 
-	/**
-	 * @param $config
-	 * @param $class
-	 *
-	 * @return WPUnitGenerator
-	 */
-	protected function getGenerator($config, $class)
-	{
-		return new WPUnit($config, $class, '\\Codeception\\TestCase\\WPTestCase');
-	}
+        $output->writeln("<info>Test was created in $filename</info>");
+    }
 
-	protected function configure()
-	{
-		$this->setDefinition(array(
+    protected function buildPath($path, $class) {
+        $className = $this->getShortClassName($class);
+        $path = $this->createDirectoryFor($path, $class);
 
-			new InputArgument('suite', InputArgument::REQUIRED, 'suite where tests will be put'),
-			new InputArgument('class', InputArgument::REQUIRED, 'class name'),
-			new InputOption('config', 'c', InputOption::VALUE_OPTIONAL, 'Use custom path for config'),
-		));
-		parent::configure();
-	}
+        $filename = $this->completeSuffix($className, 'Test');
 
+        return $path . $filename;
+    }
+
+    /**
+     * @param $config
+     * @param $class
+     *
+     * @return WPUnitGenerator
+     */
+    protected function getGenerator($config, $class) {
+        return new WPUnit($config, $class, '\\Codeception\\TestCase\\WPTestCase');
+    }
+
+    protected function configure() {
+        $this->setDefinition([
+
+            new InputArgument('suite', InputArgument::REQUIRED, 'suite where tests will be put'),
+            new InputArgument('class', InputArgument::REQUIRED, 'class name'),
+            new InputOption('config', 'c', InputOption::VALUE_OPTIONAL, 'Use custom path for config'),
+        ]);
+        parent::configure();
+    }
 }
 

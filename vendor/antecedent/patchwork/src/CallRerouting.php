@@ -15,9 +15,14 @@ use Patchwork\Utils;
 use Patchwork\Stack;
 use Patchwork\Config;
 use Patchwork\Exceptions;
+use Patchwork\CodeManipulation;
+use Patchwork\CodeManipulation\Actions\RedefinitionOfLanguageConstructs;
+use Patchwork\CodeManipulation\Actions\RedefinitionOfNew;
 
 const INTERNAL_REDEFINITION_NAMESPACE = 'Patchwork\Redefinitions';
 const EVALUATED_CODE_FILE_NAME_SUFFIX = '/\(\d+\) : eval\(\)\'d code$/';
+const INSTANTIATOR_NAMESPACE = 'Patchwork\Instantiators';
+const INSTANTIATOR_DEFAULT_ARGUMENT = 'Patchwork\CallRerouting\INSTANTIATOR_DEFAULT_ARGUMENT';
 
 const INTERNAL_STUB_CODE = '
     namespace @ns_for_redefinitions;
@@ -31,8 +36,40 @@ const INTERNAL_STUB_CODE = '
     }
 ';
 
+const INSTANTIATOR_CODE = '
+    namespace @namespace;
+    class @instantiator {
+        function instantiate(@parameters) {
+            $__pwArgs = \debug_backtrace()[0]["args"];
+            foreach ($__pwArgs as $__pwOffset => $__pwValue) {
+                if ($__pwValue === \Patchwork\CallRerouting\INSTANTIATOR_DEFAULT_ARGUMENT) {
+                    unset($__pwArgs[$__pwOffset]);
+                }
+            }
+            switch (count($__pwArgs)) {
+                case 0:
+                    return new \@class;
+                case 1:
+                    return new \@class($__pwArgs[0]);
+                case 2:
+                    return new \@class($__pwArgs[0], $__pwArgs[1]);
+                case 3:
+                    return new \@class($__pwArgs[0], $__pwArgs[1], $__pwArgs[2]);
+                case 4:
+                    return new \@class($__pwArgs[0], $__pwArgs[1], $__pwArgs[2], $__pwArgs[3]);
+                case 5:
+                    return new \@class($__pwArgs[0], $__pwArgs[1], $__pwArgs[2], $__pwArgs[3], $__pwArgs[4]);
+                default:
+                    $__pwReflector = new \ReflectionClass(\'@class\');
+                    return $__pwReflector->newInstanceArgs($__pwArgs);
+            }
+        }
+    }
+';
+
 function connect($source, callable $target, Handle $handle = null, $partOfWildcard = false)
 {
+    $source = translateIfLanguageConstruct($source);
     $handle = $handle ?: new Handle;
     list($class, $method) = Utils\interpretCallable($source);
     if (constitutesWildcard($source)) {
@@ -50,10 +87,13 @@ function connect($source, callable $target, Handle $handle = null, $partOfWildca
         $handle = connectFunction($method, $target, $handle);
     } else {
         if (Utils\callableDefined($source)) {
-            if ((new \ReflectionMethod($class, $method))->isInternal()) {
+            if ($method === 'new') {
+                $handle = connectInstantiation($class, $target, $handle);
+            } elseif ((new \ReflectionMethod($class, $method))->isUserDefined()) {
+                $handle = connectMethod($source, $target, $handle);
+            } else {
                 throw new InternalMethodsNotSupported($source);
             }
-            $handle = connectMethod($source, $target, $handle);
         } else {
             $handle = queueConnection($source, $target, $handle);
             if (Utils\runningOnHHVM()) {
@@ -117,7 +157,8 @@ function attachExistenceAssertion(Handle $handle, $function)
 
 function validate($function, $partOfWildcard = false)
 {
-    if (!Utils\callableDefined($function)) {
+    list($class, $method) = Utils\interpretCallable($function);
+    if (!Utils\callableDefined($function) || $method === 'new') {
         return;
     }
     $reflection = Utils\reflectCallable($function);
@@ -192,7 +233,7 @@ function connectMethod($function, callable $target, Handle $handle = null)
     $target->superclass = $class;
     $target->method = $method;
     $target->instance = $instance;
-    $reflection = new \ReflectionMethod($class, $method);
+    $reflection = Utils\reflectCallable($function);
     $declaringClass = $reflection->getDeclaringClass();
     $class = $declaringClass->getName();
     if (!Utils\runningOnHHVM()) {
@@ -207,6 +248,19 @@ function connectMethod($function, callable $target, Handle $handle = null)
     if (Utils\runningOnHHVM()) {
         connectOnHHVM("$class::$method", $handle);
     }
+    return $handle;
+}
+
+function connectInstantiation($class, callable $target, Handle $handle = null)
+{
+    if (!Config\isNewKeywordRedefinable()) {
+        throw new Exceptions\NewKeywordNotRedefinable;
+    }
+    $handle = $handle ?: new Handle;
+    $class = strtr($class, ['\\' => '__']);
+    $routes = &State::$routes["Patchwork\\Instantiators\\$class"]['instantiate'];
+    $offset = Utils\append($routes, [$target, $handle]);
+    $handle->addReference($routes[$offset]);
     return $handle;
 }
 
@@ -233,11 +287,23 @@ function dispatchTo(callable $target)
 
 function dispatch($class, $calledClass, $method, $frame, &$result, array $args = null)
 {
-    if (strpos($method, INTERNAL_REDEFINITION_NAMESPACE) === 0 && $args === null) {
+    $isInternalStub = strpos($method, INTERNAL_REDEFINITION_NAMESPACE) === 0;
+    $isLanguageConstructStub = strpos($method, RedefinitionOfLanguageConstructs\LANGUAGE_CONSTRUCT_PREFIX) === 0;
+    $isInstantiator = strpos($method, INSTANTIATOR_NAMESPACE) === 0;
+    if ($isInternalStub && !$isLanguageConstructStub && $args === null) {
         # Mind the namespace-of-origin argument
         $trace = debug_backtrace();
         $args = array_reverse($trace)[$frame - 1]['args'];
         array_shift($args);
+    }
+    if ($isInstantiator) {
+        $trace = debug_backtrace();
+        $args = $args ?: array_reverse($trace)[$frame - 1]['args'];
+        foreach ($args as $offset => $value) {
+            if ($value === INSTANTIATOR_DEFAULT_ARGUMENT) {
+                unset($args[$offset]);
+            }
+        }
     }
     $success = false;
     Stack\pushFor($frame, $calledClass, function() use ($class, $method, &$result, &$success) {
@@ -273,7 +339,9 @@ function relay(array $args = null)
     if ($args === null) {
         $args = $top['args'];
     }
-    if (strpos($method, INTERNAL_REDEFINITION_NAMESPACE) === 0) {
+    $isInternalStub = strpos($method, INTERNAL_REDEFINITION_NAMESPACE) === 0;
+    $isLanguageConstructStub = strpos($method, RedefinitionOfLanguageConstructs\LANGUAGE_CONSTRUCT_PREFIX) === 0;
+    if ($isInternalStub && !$isLanguageConstructStub) {
         array_unshift($args, '');
     }
     try {
@@ -360,14 +428,14 @@ function createStubsForInternals()
             continue;
         }
         $signature = ['$__pwNamespace'];
-        foreach ((new \ReflectionFunction($name))->getParameters() as $argument) {
+        foreach ((new \ReflectionFunction($name))->getParameters() as $offset => $argument) {
             $formal = '';
             if ($argument->isPassedByReference()) {
                 $formal .= '&';
             }
             $formal .= '$' . $argument->getName();
             $isVariadic = is_callable([$argument, 'isVariadic']) ? $argument->isVariadic() : false;
-            if ($argument->isOptional() || $isVariadic) {
+            if ($argument->isOptional() || $isVariadic || ($name === 'define' && $offset === 2)) {
                 continue;
             }
             $signature[] = $formal;
@@ -446,17 +514,81 @@ function connectDefaultInternals()
                         }
                         $class = $actualClass;
                     }
-                    $reflection = new \ReflectionMethod($class, $method);
-                    $reflection->setAccessible(true);
-                    $args[$offset] = function() use ($reflection, $instance) {
-                        return $reflection->invokeArgs($instance, func_get_args());
-                    };
+                    try {
+                        $reflection = new \ReflectionMethod($class, $method);
+                        $reflection->setAccessible(true);
+                        $args[$offset] = function() use ($reflection, $instance) {
+                            return $reflection->invokeArgs($instance, func_get_args());
+                        };
+                    } catch (\ReflectionException $e) {
+                        # If it's an invalid callable, then just prevent the unexpected propagation
+                        # of ReflectionExceptions.
+                    }
                 }
             }
             # Give the inspected arguments back to the callback-taking function
             return relay($args);
         });
     }
+}
+
+/**
+ * @since 2.0.5
+ *
+ * As of version 2.0.5, this is used to accommodate language constructs
+ * (echo, eval, exit and others) within the concept of callable.
+ */
+function translateIfLanguageConstruct($callable)
+{
+    if (!is_string($callable)) {
+        return $callable;
+    }
+    if (in_array($callable, Config\getRedefinableLanguageConstructs())) {
+        return RedefinitionOfLanguageConstructs\LANGUAGE_CONSTRUCT_PREFIX . $callable;
+    } elseif (in_array($callable, Config\getSupportedLanguageConstructs())) {
+        throw new Exceptions\NotUserDefined($callable);
+    } else {
+        return $callable;
+    }
+}
+
+function resolveClassToInstantiate($class, $calledClass)
+{
+    $pieces = explode('\\', $class);
+    $last = array_pop($pieces);
+    if (in_array($last, ['self', 'static', 'parent'])) {
+        $frame = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2];
+        if ($last == 'self') {
+            $class = $frame['class'];
+        } elseif ($last == 'parent') {
+            $class = get_parent_class($frame['class']);
+        } elseif ($last == 'static') {
+            $class = $calledClass;
+        }
+    }
+    return ltrim($class, '\\');
+}
+
+function getInstantiator($class, $calledClass)
+{
+    $namespace = INSTANTIATOR_NAMESPACE;
+    $class = resolveClassToInstantiate($class, $calledClass);
+    $adaptedName = strtr($class, ['\\' => '__']);
+    if (!class_exists("$namespace\\$adaptedName")) {
+        $constructor = (new \ReflectionClass($class))->getConstructor();
+        list($parameters, $arguments) = Utils\getParameterAndArgumentLists($constructor);
+        $code = strtr(INSTANTIATOR_CODE, [
+            '@namespace'    => INSTANTIATOR_NAMESPACE,
+            '@instantiator' => $adaptedName,
+            '@class'        => $class,
+            '@parameters'   => $parameters,
+        ]);
+        RedefinitionOfNew\suspendFor(function() use ($code) {
+            eval(CodeManipulation\transformForEval($code));
+        });
+    }
+    $instantiator = "$namespace\\$adaptedName";
+    return new $instantiator;
 }
 
 class State

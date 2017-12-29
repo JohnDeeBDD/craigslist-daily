@@ -1,5 +1,256 @@
 Feature: WP-CLI Commands
 
+  Scenario: Registered WP-CLI commands
+    Given an empty directory
+
+    When I run `wp cache --help`
+    Then STDOUT should contain:
+      """
+      wp cache <command>
+      """
+
+    When I run `wp cap --help`
+    Then STDOUT should contain:
+      """
+      wp cap <command>
+      """
+
+    When I run `wp checksum --help`
+    Then STDOUT should contain:
+      """
+      wp checksum <command>
+      """
+
+    When I run `wp comment --help`
+    Then STDOUT should contain:
+      """
+      wp comment <command>
+      """
+
+    When I run `wp config --help`
+    Then STDOUT should contain:
+      """
+      wp config <command>
+      """
+
+    When I run `wp core --help`
+    Then STDOUT should contain:
+      """
+      wp core <command>
+      """
+
+    When I run `wp cron --help`
+    Then STDOUT should contain:
+      """
+      wp cron <command>
+      """
+
+    When I run `wp cron`
+    Then STDOUT should contain:
+      """
+      usage: wp cron event <command>
+         or: wp cron schedule <command>
+         or: wp cron test
+      """
+
+    When I run `wp db --help`
+    Then STDOUT should contain:
+      """
+      wp db <command>
+      """
+
+    When I run `wp db`
+    Then STDOUT should contain:
+      """
+      or: wp db cli
+      """
+
+    When I run `wp eval --help`
+    Then STDOUT should contain:
+      """
+      wp eval <php-code>
+      """
+
+    When I run `wp eval-file --help`
+    Then STDOUT should contain:
+      """
+      wp eval-file <file> [<arg>...]
+      """
+
+    When I run `wp export --help`
+    Then STDOUT should contain:
+      """
+      wp export [--dir=<dirname>]
+      """
+
+    When I run `wp help --help`
+    Then STDOUT should contain:
+      """
+      wp help [<command>...]
+      """
+
+    When I run `wp import --help`
+    Then STDOUT should contain:
+      """
+      wp import <file>... --authors=<authors>
+      """
+
+    When I run `wp language --help`
+    Then STDOUT should contain:
+      """
+      wp language <command>
+      """
+
+    When I run `wp media --help`
+    Then STDOUT should contain:
+      """
+      wp media <command>
+      """
+
+    When I run `wp media`
+    Then STDOUT should contain:
+      """
+      or: wp media regenerate
+      """
+
+    When I run `wp menu --help`
+    Then STDOUT should contain:
+      """
+      wp menu <command>
+      """
+
+    When I run `wp network --help`
+    Then STDOUT should contain:
+      """
+      wp network <command>
+      """
+
+    When I run `wp option --help`
+    Then STDOUT should contain:
+      """
+      wp option <command>
+      """
+
+    When I run `wp package --help`
+    Then STDOUT should contain:
+      """
+      wp package <command>
+      """
+
+    When I run `wp package`
+    Then STDOUT should contain:
+      """
+      or: wp package install
+      """
+
+    When I run `wp plugin --help`
+    Then STDOUT should contain:
+      """
+      wp plugin <command>
+      """
+
+    When I run `wp post --help`
+    Then STDOUT should contain:
+      """
+      wp post <command>
+      """
+
+    When I run `wp post-type --help`
+    Then STDOUT should contain:
+      """
+      wp post-type <command>
+      """
+
+    When I run `wp rewrite --help`
+    Then STDOUT should contain:
+      """
+      wp rewrite <command>
+      """
+
+    When I run `wp role --help`
+    Then STDOUT should contain:
+      """
+      wp role <command>
+      """
+
+    When I run `wp scaffold --help`
+    Then STDOUT should contain:
+      """
+      wp scaffold <command>
+      """
+
+    When I run `wp search-replace --help`
+    Then STDOUT should contain:
+      """
+      wp search-replace <old> <new>
+      """
+
+    When I run `wp server --help`
+    Then STDOUT should contain:
+      """
+      wp server [--host=<host>]
+      """
+
+    When I run `wp shell --help`
+    Then STDOUT should contain:
+      """
+      wp shell [--basic]
+      """
+
+    When I run `wp sidebar --help`
+    Then STDOUT should contain:
+      """
+      wp sidebar <command>
+      """
+
+    When I run `wp site --help`
+    Then STDOUT should contain:
+      """
+      wp site <command>
+      """
+
+    When I run `wp super-admin --help`
+    Then STDOUT should contain:
+      """
+      wp super-admin <command>
+      """
+
+    When I run `wp taxonomy --help`
+    Then STDOUT should contain:
+      """
+      wp taxonomy <command>
+      """
+
+    When I run `wp term --help`
+    Then STDOUT should contain:
+      """
+      wp term <command>
+      """
+
+    When I run `wp theme --help`
+    Then STDOUT should contain:
+      """
+      wp theme <command>
+      """
+
+    When I run `wp transient --help`
+    Then STDOUT should contain:
+      """
+      wp transient <command>
+      """
+
+    When I run `wp user --help`
+    Then STDOUT should contain:
+      """
+      wp user <command>
+      """
+
+    When I run `wp widget --help`
+    Then STDOUT should contain:
+      """
+      wp widget <command>
+      """
+
   Scenario: Invalid class is specified for a command
     Given an empty directory
     And a custom-cmd.php file:
@@ -35,9 +286,9 @@ Feature: WP-CLI Commands
       """
 
     When I try `wp --require=custom-cmd.php command invalid`
-    Then STDERR should be:
+    Then STDERR should contain:
       """
-      Error: 'invalid' is not a registered subcommand of 'command'. See 'wp help command'.
+      Error: 'invalid' is not a registered subcommand of 'command'. See 'wp help command' for available subcommands.
       """
 
   Scenario: Use a closure as a command
@@ -573,20 +824,22 @@ Feature: WP-CLI Commands
     And a remove-comment.php file:
       """
       <?php
-      $command = WP_CLI::get_root_command();
-      $command->remove_subcommand( 'comment' );
+      WP_CLI::add_hook( 'after_add_command:comment', function () {
+        $command = WP_CLI::get_root_command();
+        $command->remove_subcommand( 'comment' );
+      } );
       """
 
     When I run `wp`
     Then STDOUT should contain:
       """
-      Manage comments.
+      Creates, updates, deletes, and moderates comments.
       """
 
     When I run `wp --require=remove-comment.php`
     Then STDOUT should not contain:
       """
-      Manage comments.
+      Creates, updates, deletes, and moderates comments.
       """
 
   Scenario: before_invoke should call subcommands
@@ -664,5 +917,266 @@ Feature: WP-CLI Commands
     Then STDOUT should contain:
       """
       bar
+      """
+    And STDERR should be empty
+
+  Scenario: WP-CLI suggests matching commands when user entry contains typos
+    Given a WP install
+
+    When I try `wp clu`
+    Then STDERR should contain:
+      """
+      Did you mean 'cli'?
+      """
+
+    When I try `wp cli nfo`
+    Then STDERR should contain:
+      """
+      Did you mean 'info'?
+      """
+
+    When I try `wp cli beyondlevenshteinthreshold`
+    Then STDERR should not contain:
+      """
+      Did you mean
+      """
+
+  Scenario: WP-CLI suggests matching parameters when user entry contains typos
+    Given an empty directory
+
+    When I try `wp cli info --quie`
+    Then STDERR should contain:
+      """
+      Did you mean '--quiet'?
+      """
+
+    When I try `wp cli info --forma=json`
+    Then STDERR should contain:
+      """
+      Did you mean '--format'?
+      """
+
+  Scenario: Adding a command can be aborted through the hooks system
+    Given an empty directory
+    And a abort-add-command.php file:
+      """
+      <?php
+      WP_CLI::add_hook( 'before_add_command:test-command-2', function ( $addition ) {
+        $addition->abort( 'Testing hooks.' );
+      } );
+
+      WP_CLI::add_command( 'test-command-1', function () {} );
+      WP_CLI::add_command( 'test-command-2', function () {} );
+      """
+
+    When I run `wp --require=abort-add-command.php`
+    Then STDOUT should contain:
+      """
+      test-command-1
+      """
+    And STDOUT should not contain:
+      """
+      test-command-2
+      """
+
+  Scenario: Adding a command can depend on a previous command having been added before
+    Given an empty directory
+    And a add-dependent-command.php file:
+      """
+      <?php
+      class TestCommand {
+      }
+
+      WP_CLI::add_hook( 'after_add_command:test-command', function () {
+        WP_CLI::add_command( 'test-command sub-command', function () {} );
+      } );
+
+      WP_CLI::add_command( 'test-command', 'TestCommand' );
+      """
+
+    When I run `wp --require=add-dependent-command.php`
+    Then STDOUT should contain:
+      """
+      test-command
+      """
+
+    When I run `wp --require=add-dependent-command.php help test-command`
+    Then STDOUT should contain:
+      """
+      sub-command
+      """
+
+  Scenario: Command additions can be deferred until their parent is added
+    Given an empty directory
+    And a add-deferred-command.php file:
+      """
+      <?php
+      class TestCommand {
+      }
+
+      WP_CLI::add_command( 'test-command sub-command', function () {} );
+
+      WP_CLI::add_command( 'test-command', 'TestCommand' );
+      """
+
+    When I run `wp --require=add-deferred-command.php`
+    Then STDOUT should contain:
+      """
+      test-command
+      """
+
+    When I run `wp --require=add-deferred-command.php help test-command`
+    Then STDOUT should contain:
+      """
+      sub-command
+      """
+
+  Scenario: Command additions should work as plugins
+    Given a WP install
+    And a wp-content/plugins/test-cli/command.php file:
+      """
+      <?php
+      // Plugin Name: Test CLI Help
+
+      class TestCommand {
+      }
+
+      function test_function() {
+        \WP_CLI::success( 'unknown-parent child-command' );
+      }
+
+      WP_CLI::add_command( 'unknown-parent child-command', 'test_function' );
+
+      WP_CLI::add_command( 'test-command sub-command', function () { \WP_CLI::success( 'test-command sub-command' ); } );
+
+      WP_CLI::add_command( 'test-command', 'TestCommand' );
+      """
+    And I run `wp plugin activate test-cli`
+
+    When I run `wp`
+    Then STDOUT should contain:
+      """
+      test-command
+      """
+    And STDERR should be empty
+
+    When I run `wp help test-command`
+    Then STDOUT should contain:
+      """
+      sub-command
+      """
+    And STDERR should be empty
+
+    When I run `wp test-command sub-command`
+    Then STDOUT should contain:
+      """
+      Success: test-command sub-command
+      """
+    And STDERR should be empty
+
+    When I run `wp unknown-parent child-command`
+    Then STDOUT should contain:
+      """
+      Success: unknown-parent child-command
+      """
+    And STDERR should be empty
+
+  Scenario: Command additions should work as must-use plugins
+    Given a WP install
+    And a wp-content/mu-plugins/test-cli.php file:
+      """
+      <?php
+      // Plugin Name: Test CLI Help
+
+      class TestCommand {
+      }
+
+      function test_function() {
+        \WP_CLI::success( 'unknown-parent child-command' );
+      }
+
+      WP_CLI::add_command( 'unknown-parent child-command', 'test_function' );
+
+      WP_CLI::add_command( 'test-command sub-command', function () { \WP_CLI::success( 'test-command sub-command' ); } );
+
+      WP_CLI::add_command( 'test-command', 'TestCommand' );
+      """
+
+    When I run `wp`
+    Then STDOUT should contain:
+      """
+      test-command
+      """
+    And STDERR should be empty
+
+    When I run `wp help test-command`
+    Then STDOUT should contain:
+      """
+      sub-command
+      """
+    And STDERR should be empty
+
+    When I run `wp test-command sub-command`
+    Then STDOUT should contain:
+      """
+      Success: test-command sub-command
+      """
+    And STDERR should be empty
+
+    When I run `wp unknown-parent child-command`
+    Then STDOUT should contain:
+      """
+      Success: unknown-parent child-command
+      """
+    And STDERR should be empty
+
+  Scenario: Command additions should work when registered on after_wp_load
+    Given a WP install
+    And a wp-content/mu-plugins/test-cli.php file:
+      """
+      <?php
+      // Plugin Name: Test CLI Help
+
+      class TestCommand {
+      }
+
+      function test_function() {
+        \WP_CLI::success( 'unknown-parent child-command' );
+      }
+
+      WP_CLI::add_hook( 'after_wp_load', function(){
+        WP_CLI::add_command( 'unknown-parent child-command', 'test_function' );
+
+        WP_CLI::add_command( 'test-command sub-command', function () { \WP_CLI::success( 'test-command sub-command' ); } );
+
+        WP_CLI::add_command( 'test-command', 'TestCommand' );
+      });
+      """
+
+    When I run `wp`
+    Then STDOUT should contain:
+      """
+      test-command
+      """
+    And STDERR should be empty
+
+    When I run `wp help test-command`
+    Then STDOUT should contain:
+      """
+      sub-command
+      """
+    And STDERR should be empty
+
+    When I run `wp test-command sub-command`
+    Then STDOUT should contain:
+      """
+      Success: test-command sub-command
+      """
+    And STDERR should be empty
+
+    When I run `wp unknown-parent child-command`
+    Then STDOUT should contain:
+      """
+      Success: unknown-parent child-command
       """
     And STDERR should be empty

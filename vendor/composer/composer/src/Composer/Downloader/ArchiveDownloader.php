@@ -91,10 +91,6 @@ abstract class ArchiveDownloader extends FileDownloader
 
             break;
         }
-
-        if ($output) {
-            $this->io->writeError('');
-        }
     }
 
     /**
@@ -152,6 +148,7 @@ abstract class ArchiveDownloader extends FileDownloader
         $finder = Finder::create()
             ->ignoreVCS(false)
             ->ignoreDotFiles(false)
+            ->notName('.DS_Store')
             ->depth(0)
             ->in($dir);
 

@@ -43,6 +43,7 @@ use Composer\Semver\Semver;
  * @author Robert Schönthal <seroscho@googlemail.com>
  * @author Jordi Boggiano <j.boggiano@seld.be>
  * @author Jérémy Romey <jeremyFreeAgent>
+ * @author Mihai Plasoianu <mihai@plasoianu.de>
  */
 class ShowCommand extends BaseCommand
 {
@@ -58,7 +59,7 @@ class ShowCommand extends BaseCommand
         $this
             ->setName('show')
             ->setAliases(array('info'))
-            ->setDescription('Show information about packages.')
+            ->setDescription('Shows information about packages.')
             ->setDefinition(array(
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package to inspect. Or a name including a wildcard (*) to filter lists of packages instead.'),
                 new InputArgument('version', InputArgument::OPTIONAL, 'Version or version constraint to inspect'),
@@ -156,6 +157,10 @@ EOT
             $repos = new CompositeRepository(array_merge(array($installedRepo), $defaultRepos));
         } else {
             $repos = $installedRepo = $this->getComposer()->getRepositoryManager()->getLocalRepository();
+            $rootPkg = $this->getComposer()->getPackage();
+            if (!$installedRepo->getPackages() && ($rootPkg->getRequires() || $rootPkg->getDevRequires())) {
+                $io->writeError('<warning>No dependencies installed. Try running composer install or update.</warning>');
+            }
         }
 
         if ($composer) {
@@ -192,12 +197,16 @@ EOT
                 $versions = array($package->getPrettyVersion() => $package->getVersion());
             }
 
+            $exitCode = 0;
             if ($input->getOption('tree')) {
                 $this->displayPackageTree($package, $installedRepo, $repos);
             } else {
                 $latestPackage = null;
                 if ($input->getOption('latest')) {
                     $latestPackage = $this->findLatestPackage($package, $composer, $phpVersion);
+                }
+                if ($input->getOption('outdated') && $input->getOption('strict') && $latestPackage && $latestPackage->getFullPrettyVersion() !== $package->getFullPrettyVersion() && !$latestPackage->isAbandoned()) {
+                    $exitCode = 1;
                 }
                 $this->printMeta($package, $versions, $installedRepo, $latestPackage ?: null);
                 $this->printLinks($package, 'requires');
@@ -213,7 +222,7 @@ EOT
                 $this->printLinks($package, 'replaces');
             }
 
-            return;
+            return $exitCode;
         }
 
         // show tree view if requested
@@ -256,6 +265,8 @@ EOT
         }
         if (Platform::isWindows()) {
             $width--;
+        } else {
+            $width = max(80, $width);
         }
 
         if ($input->getOption('path') && null === $composer) {
@@ -351,7 +362,7 @@ EOT
                         }
                         if ($input->getOption('outdated') && $latestPackage && $latestPackage->getFullPrettyVersion() === $package->getFullPrettyVersion() && !$latestPackage->isAbandoned()) {
                             continue;
-                        } elseif ($input->getOption('outdated')) {
+                        } elseif ($input->getOption('outdated') || $input->getOption('strict')) {
                             $hasOutdatedPackages = true;
                         }
 
@@ -445,11 +456,10 @@ EOT
                     if (isset($package['path'])) {
                         $io->write(' ' . $package['path'], false);
                     }
-                    if (isset($package['warning'])) {
-                        $io->writeError('');
-                        $io->writeError('<warning>' . $package['warning'] . '</warning>', false);
-                    }
                     $io->write('');
+                    if (isset($package['warning'])) {
+                        $io->write('<warning>' . $package['warning'] . '</warning>');
+                    }
                 }
 
                 if ($showAllTypes) {

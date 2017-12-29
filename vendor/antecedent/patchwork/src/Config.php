@@ -10,6 +10,7 @@ namespace Patchwork\Config;
 
 use Patchwork\Utils;
 use Patchwork\Exceptions;
+use Patchwork\CodeManipulation\Actions\RedefinitionOfLanguageConstructs;
 
 const FILE_NAME = 'patchwork.json';
 
@@ -21,7 +22,7 @@ function locate()
     $paths[] = getcwd();
     foreach ($paths as $path) {
         while (dirname($path) !== $path) {
-            $file = $path . '/' . FILE_NAME;
+            $file = $path . DIRECTORY_SEPARATOR . FILE_NAME;
             if (is_file($file) && !isset($alreadyRead[$file])) {
                 read($file);
                 State::$timestamp = max(filemtime($file), State::$timestamp);
@@ -45,7 +46,7 @@ function read($file)
 function set(array $data, $file)
 {
     $keys = array_keys($data);
-    $list = ['blacklist', 'whitelist', 'cache-path', 'redefinable-internals'];
+    $list = ['blacklist', 'whitelist', 'cache-path', 'redefinable-internals', 'new-keyword-redefinable'];
     $unknown = array_diff($keys, $list);
     if ($unknown != []) {
         throw new Exceptions\ConfigKeyNotRecognized(reset($unknown), $list, $file);
@@ -55,6 +56,7 @@ function set(array $data, $file)
     setWhitelist(get($data, 'whitelist'), $root);
     setCachePath(get($data, 'cache-path'), $root);
     setRedefinableInternals(get($data, 'redefinable-internals'), $root);
+    setNewKeywordRedefinability(get($data, 'new-keyword-redefinable'), $root);
 }
 
 function get(array $data, $key)
@@ -153,6 +155,29 @@ function getRedefinableInternals()
 function setRedefinableInternals($names)
 {
     merge(State::$redefinableInternals, $names);
+    $constructs = array_intersect(State::$redefinableInternals, getSupportedLanguageConstructs());
+    State::$redefinableLanguageConstructs = array_merge(State::$redefinableLanguageConstructs, $constructs);
+    State::$redefinableInternals = array_diff(State::$redefinableInternals, $constructs);
+}
+
+function setNewKeywordRedefinability($value)
+{
+    State::$newKeywordRedefinable = State::$newKeywordRedefinable || $value;
+}
+
+function getRedefinableLanguageConstructs()
+{
+    return State::$redefinableLanguageConstructs;
+}
+
+function getSupportedLanguageConstructs()
+{
+    return array_keys(RedefinitionOfLanguageConstructs\getMappingOfConstructs());
+}
+
+function isNewKeywordRedefinable()
+{
+    return State::$newKeywordRedefinable;
 }
 
 function getCachePath()
@@ -199,5 +224,7 @@ class State
     static $whitelist = [];
     static $cachePath;
     static $redefinableInternals = [];
+    static $redefinableLanguageConstructs = [];
+    static $newKeywordRedefinable = false;
     static $timestamp = 0;
 }

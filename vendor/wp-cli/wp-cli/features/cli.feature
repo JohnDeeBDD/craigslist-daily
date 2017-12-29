@@ -1,5 +1,16 @@
 Feature: `wp cli` tasks
 
+  Scenario: Ability to detect a WP-CLI registered command
+    Given an empty directory
+
+    When I run `wp package install wp-cli/scaffold-package-command`
+    When I run `wp cli has-command scaffold package`
+    Then the return code should be 0
+    
+    When I run `wp package uninstall wp-cli/scaffold-package-command`
+    When I try `wp cli has-command scaffold package`
+    Then the return code should be 1
+
   Scenario: Ability to set a custom version when building
     Given an empty directory
     And save the {SRC_DIR}/VERSION file as {TRUE_VERSION}
@@ -64,6 +75,12 @@ Feature: `wp cli` tasks
       0.0.0
       """
 
+    When I run `{PHAR_PATH} cli update`
+    Then STDOUT should be:
+      """
+      Success: WP-CLI is at the latest version.
+      """
+
   @github-api
   Scenario: Patch update from 0.14.0 to 0.14.1
     Given an empty directory
@@ -110,6 +127,7 @@ Feature: `wp cli` tasks
     And STDERR should be empty
     And the return code should be 0
 
+  @require-php-5.6
   Scenario: Install WP-CLI nightly
     Given an empty directory
     And a new Phar with version "0.14.0"
@@ -136,7 +154,7 @@ Feature: `wp cli` tasks
       y
       """
 
-    When I run `{PHAR_PATH} cli check-update --minor --field=version`
+    When I run `{PHAR_PATH} cli check-update --field=version | head -1`
     Then STDOUT should not be empty
     And save STDOUT as {UPDATE_VERSION}
 
@@ -171,10 +189,10 @@ Feature: `wp cli` tasks
   Scenario: Dump the list of global parameters with values
     Given a WP install
 
-    When I run `wp cli param-dump --with-values | grep -o '"current":' | uniq -c`
+    When I run `wp cli param-dump --with-values | grep -o '"current":' | uniq -c | tr -d ' '`
     Then STDOUT should be:
       """
-           17 "current":
+      17"current":
       """
     And STDERR should be empty
     And the return code should be 0

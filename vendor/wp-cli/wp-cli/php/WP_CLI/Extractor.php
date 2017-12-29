@@ -44,11 +44,14 @@ class Extractor {
 		$zip = new ZipArchive();
 		$res = $zip->open( $zipfile );
 		if ( true === $res ) {
-			$tempdir = implode( DIRECTORY_SEPARATOR, Array (
-				dirname( $zipfile ),
-				basename( $zipfile, '.zip' ),
-				$zip->getNameIndex( 0 )
-			) );
+			$tempdir = implode(
+				DIRECTORY_SEPARATOR,
+				array(
+					dirname( $zipfile ),
+					Utils\basename( $zipfile, '.zip' ),
+					$zip->getNameIndex( 0 ),
+				)
+			);
 
 			$zip->extractTo( dirname( $tempdir ) );
 			$zip->close();
@@ -67,29 +70,39 @@ class Extractor {
 	 * @param string $dest
 	 */
 	private static function extract_tarball( $tarball, $dest ) {
-		if ( ! class_exists( 'PharData' ) ) {
-			$cmd = "tar xz --strip-components=1 --directory=%s -f $tarball";
-			WP_CLI::launch( Utils\esc_cmd( $cmd, $dest ) );
-			return;
+
+		if ( class_exists( 'PharData' ) ) {
+			try {
+				$phar = new PharData( $tarball );
+				$tempdir = implode(
+					DIRECTORY_SEPARATOR,
+					array(
+						dirname( $tarball ),
+						Utils\basename( $tarball, '.tar.gz' ),
+						$phar->getFilename(),
+					)
+				);
+
+				$phar->extractTo( dirname( $tempdir ), null, true );
+
+				self::copy_overwrite_files( $tempdir, $dest );
+
+				self::rmdir( dirname( $tempdir ) );
+				return;
+			} catch ( \Exception $e ) {
+				WP_CLI::warning( "PharData failed, falling back to 'tar gz' (" . $e->getMessage() . ')' );
+				// Fall through to trying `tar xz` below
+			}
 		}
-		$phar = new PharData( $tarball );
-		$tempdir = implode( DIRECTORY_SEPARATOR, Array (
-			dirname( $tarball ),
-			basename( $tarball, '.tar.gz' ),
-			$phar->getFileName()
-		) );
-
-		$phar->extractTo( dirname( $tempdir ), null, true );
-
-		self::copy_overwrite_files( $tempdir, $dest );
-
-		self::rmdir( dirname( $tempdir ) );
+		$cmd = "tar xz --strip-components=1 --directory=%s -f $tarball";
+		WP_CLI::launch( Utils\esc_cmd( $cmd, $dest ) );
 	}
 
 	public static function copy_overwrite_files( $source, $dest ) {
 		$iterator = new RecursiveIteratorIterator(
 			new RecursiveDirectoryIterator( $source, RecursiveDirectoryIterator::SKIP_DOTS ),
-			RecursiveIteratorIterator::SELF_FIRST);
+			RecursiveIteratorIterator::SELF_FIRST
+		);
 
 		$error = 0;
 
@@ -102,7 +115,7 @@ class Extractor {
 			$dest_path = $dest . DIRECTORY_SEPARATOR . $iterator->getSubPathName();
 
 			if ( $item->isDir() ) {
-				if ( !is_dir( $dest_path ) ) {
+				if ( ! is_dir( $dest_path ) ) {
 					mkdir( $dest_path );
 				}
 			} else {

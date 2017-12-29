@@ -2,6 +2,7 @@
 
 namespace tad\Codeception\Command;
 
+use Codeception\CustomCommandInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -10,7 +11,6 @@ use Symfony\Component\Yaml\Yaml;
 
 abstract class BaseCommand extends Command
 {
-
     /**
      * @var bool|array
      */
