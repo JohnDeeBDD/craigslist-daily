@@ -15,6 +15,6 @@ modules:
             domain: locahost
             adminEmail: admin@localhost
             title: WP Tests
-            plugins: [/Daily/Daily.php]
-            activatePlugins: [/Daily/Daily.php]
+            plugins: [Daily/Daily.php]
+            activatePlugins: [Daily/Daily.php]
             bootstrapActions: []
