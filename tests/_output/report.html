@@ -209,34 +209,43 @@
  <body>
    <ul id="toolbar-filter">
      <li> <a href="#" title="Show all" onClick="showAllScenarios()">◯</a></li>
-     <li> <a href="#" title="Successful" onClick="toggleScenarios('scenarioSuccess', this.parentElement)"><strong>✔</strong> 27</a></li>
-     <li> <a href="#" title="Failed" onClick="toggleScenarios('scenarioFailed', this.parentElement)"><strong>✗</strong> 0</a></li>
+     <li> <a href="#" title="Successful" onClick="toggleScenarios('scenarioSuccess', this.parentElement)"><strong>✔</strong> 26</a></li>
+     <li> <a href="#" title="Failed" onClick="toggleScenarios('scenarioFailed', this.parentElement)"><strong>✗</strong> 2</a></li>
      <li> <a href="#" title="Skipped" onClick="toggleScenarios('scenarioSkipped', this.parentElement)"><strong>S</strong> 0</a></li>
      <li> <a href="#" title="Incomplete" onClick="toggleScenarios('scenarioIncomplete', this.parentElement)"><strong>I</strong> 0</a></li>
    </ul>
  <div class="layout">
- <h1>Codeception Results <small><span style="color: green">OK</span> (0.9s)</small></h1>
+ <h1>Codeception Results <small><span style="color: #e74c3c">FAILED</span> (0.2s)</small></h1>
 
 
 
 	 <table border="0" style="width: 100%;">
 		<tr>
  <td>
-     <h3>Unit Tests</h3>
+     <h3>Runner Tests</h3>
  </td>
-</tr>   <tr class="scenarioRow scenarioSuccess">
+</tr>   <tr class="scenarioRow scenarioFailed">
     <td>
-     <p class="scenarioSuccess" onclick="showHide('1', this)">
-          <span class="quiet">Ability_extractTextFromAnchorLinkTest &raquo;</span> It_should_extract_text_from_an_anchor_link <span style="color: #34495e; font-size: 70%;">0.06s</span></p>
+     <p class="scenarioFailed" onclick="showHide('1', this)"><span class="toggle">+</span>
+          <span class="quiet">PhantomJSPhoneNumberScraperCest &raquo;</span> Get phone number from page <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
-   <tr class="scenarioRow scenarioSuccess">
+   <tr class="scenarioRow scenarioFailed">
     <td>
-     <table border="0" width="100%" class="scenarioSuccess scenarioStepsTable" id="stepContainer1">
+     <table border="0" width="100%" class="scenarioFailed scenarioStepsTable" id="stepContainer1">
 
 
+      <tr>
+       <td class="stepName failedStep">&nbsp;&nbsp;&nbsp;&nbsp;I grab option from database <span style="color: #732E81">&quot;crg-daily-ID-to-fetch&quot;</span></td>
+      </tr>
 
-         
+
+         <tr >
+    <td class="error">
+        SQLSTATE[42S02]: Base table or view not found: 1146 Table 'wordpress.wp_options' doesn't exist
+    </td>
+</tr>
+
          
          
      </table>
@@ -246,10 +255,14 @@
    </tr>
 
 
-   <tr class="scenarioRow scenarioSuccess">
+<tr>
+ <td>
+     <h3>Unit Tests</h3>
+ </td>
+</tr>   <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('2', this)">
-          <span class="quiet">CityObjectTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0.08s</span></p>
+          <span class="quiet">Ability_extractTextFromAnchorLinkTest &raquo;</span> It_should_extract_text_from_an_anchor_link <span style="color: #34495e; font-size: 70%;">0.01s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -271,7 +284,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('3', this)">
-          <span class="quiet">CityObjectTest &raquo;</span> It should return the url <span style="color: #34495e; font-size: 70%;">0s</span></p>
+          <span class="quiet">CityObjectTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -293,7 +306,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('4', this)">
-          <span class="quiet">CityObjectTest &raquo;</span> It should return the city slug <span style="color: #34495e; font-size: 70%;">0s</span></p>
+          <span class="quiet">CityObjectTest &raquo;</span> It should return the url <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -315,7 +328,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('5', this)">
-          <span class="quiet">CityObjectTest &raquo;</span> It should return the city nice name <span style="color: #34495e; font-size: 70%;">0s</span></p>
+          <span class="quiet">CityObjectTest &raquo;</span> It should return the city slug <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -337,7 +350,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('6', this)">
-          <span class="quiet">CraigslistRawDumpProcessorTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0.05s</span></p>
+          <span class="quiet">CityObjectTest &raquo;</span> It should return the city nice name <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -359,7 +372,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('7', this)">
-          <span class="quiet">CraigslistRawDumpProcessorTest &raquo;</span> It_should_return processed array <span style="color: #34495e; font-size: 70%;">0.02s</span></p>
+          <span class="quiet">CraigslistRawDumpProcessorTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -381,7 +394,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('8', this)">
-          <span class="quiet">CraigslistCitiesTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0s</span></p>
+          <span class="quiet">CraigslistRawDumpProcessorTest &raquo;</span> It_should_return processed array <span style="color: #34495e; font-size: 70%;">0.01s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -403,7 +416,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('9', this)">
-          <span class="quiet">CraigslistCitiesTest &raquo;</span> It_should_return_the_total_number_of_cities <span style="color: #34495e; font-size: 70%;">0s</span></p>
+          <span class="quiet">CraigslistCitiesTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -425,7 +438,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('10', this)">
-          <span class="quiet">CraigslistCitiesTest &raquo;</span> It_should_return_the_index_of_a_particular_city <span style="color: #34495e; font-size: 70%;">0s</span></p>
+          <span class="quiet">CraigslistCitiesTest &raquo;</span> It_should_return_the_total_number_of_cities <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -447,7 +460,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('11', this)">
-          <span class="quiet">CraigslistReplyFlapParserTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0.04s</span></p>
+          <span class="quiet">CraigslistCitiesTest &raquo;</span> It_should_return_the_index_of_a_particular_city <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -469,7 +482,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('12', this)">
-          <span class="quiet">CraigslistReplyFlapParserTest &raquo;</span> It_should_return_bool_there_is_a_phone_character <span style="color: #34495e; font-size: 70%;">0.01s</span></p>
+          <span class="quiet">CraigslistReplyFlapParserTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -491,7 +504,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('13', this)">
-          <span class="quiet">CraigslistReplyFlapParserTest &raquo;</span> It_should_return_bool_there_is_an_email <span style="color: #34495e; font-size: 70%;">0s</span></p>
+          <span class="quiet">CraigslistReplyFlapParserTest &raquo;</span> It_should_return_bool_there_is_a_phone_character <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -513,7 +526,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('14', this)">
-          <span class="quiet">CraigslistReplyFlapParserTest &raquo;</span> It_should_extract_an_email_from_a_blurb <span style="color: #34495e; font-size: 70%;">0s</span></p>
+          <span class="quiet">CraigslistReplyFlapParserTest &raquo;</span> It_should_return_bool_there_is_an_email <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -535,7 +548,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('15', this)">
-          <span class="quiet">DailyItemTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0s</span></p>
+          <span class="quiet">CraigslistReplyFlapParserTest &raquo;</span> It_should_extract_an_email_from_a_blurb <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -557,7 +570,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('16', this)">
-          <span class="quiet">DailyItemTest &raquo;</span> It_should_load_data_from_the_db <span style="color: #34495e; font-size: 70%;">0.15s</span></p>
+          <span class="quiet">DailyItemTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -579,7 +592,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('17', this)">
-          <span class="quiet">DailyItemTest &raquo;</span> It_should_have_some_setter_and_getter_methods <span style="color: #34495e; font-size: 70%;">0.05s</span></p>
+          <span class="quiet">DailyItemTest &raquo;</span> It_should_load_data_from_the_db <span style="color: #34495e; font-size: 70%;">0.01s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -601,7 +614,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('18', this)">
-          <span class="quiet">DailyItemTest &raquo;</span> It_should_have_setter_and_getter_methods_for_the_anchor link <span style="color: #34495e; font-size: 70%;">0s</span></p>
+          <span class="quiet">DailyItemTest &raquo;</span> It_should_have_some_setter_and_getter_methods <span style="color: #34495e; font-size: 70%;">0.01s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -623,7 +636,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('19', this)">
-          <span class="quiet">DailyItemTest &raquo;</span> It_should_return_fetch the phone number anchor link_for_unfetched_dailys <span style="color: #34495e; font-size: 70%;">0.05s</span></p>
+          <span class="quiet">DailyItemTest &raquo;</span> It_should_have_setter_and_getter_methods_for_the_anchor link <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -642,19 +655,24 @@
    </tr>
 
 
-   <tr class="scenarioRow scenarioSuccess">
+   <tr class="scenarioRow scenarioFailed">
     <td>
-     <p class="scenarioSuccess" onclick="showHide('20', this)">
-          <span class="quiet">DailyItemTest &raquo;</span> It_should_return_fetch the phone number anchor link_for_fetched_dailys <span style="color: #34495e; font-size: 70%;">0.05s</span></p>
+     <p class="scenarioFailed" onclick="showHide('20', this)">
+          <span class="quiet">DailyItemTest &raquo;</span> It_should_return_fetch the phone number anchor link_for_unfetched_dailys <span style="color: #34495e; font-size: 70%;">0.01s</span></p>
     </td>
    </tr>
-   <tr class="scenarioRow scenarioSuccess">
+   <tr class="scenarioRow scenarioFailed">
     <td>
-     <table border="0" width="100%" class="scenarioSuccess scenarioStepsTable" id="stepContainer20">
+     <table border="0" width="100%" class="scenarioFailed scenarioStepsTable" id="stepContainer20">
 
 
 
-         
+         <tr >
+    <td class="error">
+        Failed asserting that two strings are equal.
+    </td>
+</tr>
+
          
          
      </table>
@@ -667,7 +685,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('21', this)">
-          <span class="quiet">LiveDailyCounterTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0s</span></p>
+          <span class="quiet">DailyItemTest &raquo;</span> It_should_return_fetch the phone number anchor link_for_fetched_dailys <span style="color: #34495e; font-size: 70%;">0.01s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -689,7 +707,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('22', this)">
-          <span class="quiet">LiveDailyCounterTest &raquo;</span> It_should_return_the_number_of_live_dailys <span style="color: #34495e; font-size: 70%;">0.16s</span></p>
+          <span class="quiet">LiveDailyCounterTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -711,7 +729,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('23', this)">
-          <span class="quiet">LiveDailyCounterTest &raquo;</span> Make sure globals are loading properly <span style="color: #34495e; font-size: 70%;">0s</span></p>
+          <span class="quiet">LiveDailyCounterTest &raquo;</span> It_should_return_the_number_of_live_dailys <span style="color: #34495e; font-size: 70%;">0.07s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -733,7 +751,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('24', this)">
-          <span class="quiet">TickerPointerForListOfSitesTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0s</span></p>
+          <span class="quiet">LiveDailyCounterTest &raquo;</span> Make sure globals are loading properly <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -755,7 +773,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('25', this)">
-          <span class="quiet">TickerPointerForListOfSitesTest &raquo;</span> If it is not in the db_set the option to zero <span style="color: #34495e; font-size: 70%;">0.01s</span></p>
+          <span class="quiet">TickerPointerForListOfSitesTest &raquo;</span> It_should_be_instantiatable <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -777,7 +795,7 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('26', this)">
-          <span class="quiet">TickerPointerForListOfSitesTest &raquo;</span> It should advance one <span style="color: #34495e; font-size: 70%;">0.05s</span></p>
+          <span class="quiet">TickerPointerForListOfSitesTest &raquo;</span> If it is not in the db_set the option to zero <span style="color: #34495e; font-size: 70%;">0s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
@@ -799,12 +817,34 @@
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <p class="scenarioSuccess" onclick="showHide('27', this)">
-          <span class="quiet">TickerPointerForListOfSitesTest &raquo;</span> It should reset to zero if over the limit <span style="color: #34495e; font-size: 70%;">0.04s</span></p>
+          <span class="quiet">TickerPointerForListOfSitesTest &raquo;</span> It should advance one <span style="color: #34495e; font-size: 70%;">0.01s</span></p>
     </td>
    </tr>
    <tr class="scenarioRow scenarioSuccess">
     <td>
      <table border="0" width="100%" class="scenarioSuccess scenarioStepsTable" id="stepContainer27">
+
+
+
+         
+         
+         
+     </table>
+
+
+    </td>
+   </tr>
+
+
+   <tr class="scenarioRow scenarioSuccess">
+    <td>
+     <p class="scenarioSuccess" onclick="showHide('28', this)">
+          <span class="quiet">TickerPointerForListOfSitesTest &raquo;</span> It should reset to zero if over the limit <span style="color: #34495e; font-size: 70%;">0s</span></p>
+    </td>
+   </tr>
+   <tr class="scenarioRow scenarioSuccess">
+    <td>
+     <table border="0" width="100%" class="scenarioSuccess scenarioStepsTable" id="stepContainer28">
 
 
 
@@ -826,11 +866,11 @@
       <table border="0">
        <tr>
         <td width="250" class="scenarioSuccess">Successful scenarios:</td>
-        <td class="scenarioSuccessValue"><strong>27</strong></td>
+        <td class="scenarioSuccessValue"><strong>26</strong></td>
        </tr>
        <tr>
         <td class="scenarioFailed">Failed scenarios:</td>
-        <td class="scenarioFailedValue"><strong>0</strong></td>
+        <td class="scenarioFailedValue"><strong>2</strong></td>
        </tr>
        <tr>
         <td class="scenarioSkipped">Skipped scenarios:</td>

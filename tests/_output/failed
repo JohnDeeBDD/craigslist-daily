@@ -1,0 +1,2 @@
+tests/unit/DailyItemClassTest.php:it_should_return_fetchThePhoneNumberAnchorLink_for_unfetched_dailys
+tests/runner/PhantomJSPhoneNumberScraperCest.php:getPhoneNumberFromPage

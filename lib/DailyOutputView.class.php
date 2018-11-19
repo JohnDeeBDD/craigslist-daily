@@ -82,10 +82,10 @@ class DailyOutputView{
     	}else{
     		$keyword = get_option('search-keyword');
     	}
-    	
+    	global $PluginRootDirectoryName;
     	$output = 
 <<<OUTPUT
-<form method = 'post' action = '$siteURL/wp-admin/admin.php?page=Daily%2Flib%2FCraigslistAdminPage.class.php'>
+<form method = 'post' action = '$siteURL/wp-admin/admin.php?page=$PluginRootDirectoryName%2Flib%2FCraigslistAdminPage.class.php'>
 	<h1>Craigslist Daily Report:</h1>
 	<strong>Current Date:</strong> $currentDate<br />
 	<strong>Live:</strong> $numberOfLiveDailys<br />

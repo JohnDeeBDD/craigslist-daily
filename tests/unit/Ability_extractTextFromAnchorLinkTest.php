@@ -1,5 +1,5 @@
 <?php
-
+include_once '/var/www/html/wp-content/plugins/craigslist-daily/lib/CRG_DailyAutoloader.class.php';
 class Ability_extractTextFromAnchorLinkTest extends \Codeception\TestCase\WPTestCase{
 
 	use CRGDaily\Ability_extractTextFromAnchorLink;

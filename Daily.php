@@ -1,18 +1,19 @@
 <?php
 /*
 Plugin Name: Craigslist Daily
-Plugin URI: http://wordpress-bdd.com/
+Plugin URI: https://generalchicken.net
 Description: This plugin scans Craigslist for certain keywords, and compiles the search results.
-Version: 2
-Author: Jim Maguire
-Author URI: http://wordpress-bdd.com/
+Version: 2.1
+Author: John Dee
+Author URI: https://generalchicken.net
 */
 
+global $PluginRootDirectoryName; $PluginRootDirectoryName = "craigslist-daily";
 require_once 'src/CRGDaily/DailyPlugin.class.php';
 $DailyPlugin = new CRGDaily\DailyPlugin;
 
-//include_once 'lib/CRG_DailyAutoloader.class.php';
-//$CRG_DailyAutoloader = new \CRG_Daily\CRG_DailyAutoloader;
+
+$CRG_DailyAutoloader = new \CRG_Daily\CRG_DailyAutoloader;
 
 include_once('lib/DailyCPTs.class.php');
 $DailyCPTs = new \CRG_Daily\DailyCPTs;
