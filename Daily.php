@@ -13,7 +13,7 @@ require_once 'src/CRGDaily/DailyPlugin.class.php';
 $DailyPlugin = new CRGDaily\DailyPlugin;
 
 
-$CRG_DailyAutoloader = new \CRG_Daily\CRG_DailyAutoloader;
+//$CRG_DailyAutoloader = new \CRG_Daily\CRG_DailyAutoloader;
 
 include_once('lib/DailyCPTs.class.php');
 $DailyCPTs = new \CRG_Daily\DailyCPTs;
